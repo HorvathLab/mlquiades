@@ -13,8 +13,8 @@ There are three options for feature, in this case gene, selection. They include:
 
 ```
 git init
-git clone https://github.com/HorvathLab/software_editing_space.git
-cd software_editing_space/mlquiades
+git clone git@github.com:HorvathLab/mlquiades.git
+cd mlquiades
 pip install -e .     #installs necessary packages using pyproject.toml; edit pyproject.toml to fit your package versions if necessary
 ```
 
