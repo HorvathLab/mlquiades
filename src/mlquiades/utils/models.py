@@ -1,15 +1,15 @@
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-from sklearn import metrics, tree
-from sklearn.metrics import ConfusionMatrixDisplay, auc, f1_score, roc_curve, roc_auc_score
-from sklearn.linear_model import RidgeClassifier
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
 import keras
 import keras_tuner
-from keras import layers
+import numpy as np
+import pandas as pd
 from .plotting import *
+from keras import layers
+from sklearn import metrics, tree
+from tensorflow.keras.models import Sequential
+from sklearn.linear_model import RidgeClassifier
+from tensorflow.keras.layers import Dense, Dropout
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.metrics import ConfusionMatrixDisplay, auc, f1_score, roc_curve, roc_auc_score
 
 def evaluate(
         y_test, y_pred):
