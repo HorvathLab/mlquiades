@@ -1,6 +1,11 @@
 import os
+import sys
 import argparse
 from utils import *
+
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter("ignore")
 
 def params():
     parser = argparse.ArgumentParser()
