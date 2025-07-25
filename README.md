@@ -15,11 +15,22 @@ There are three options for feature, in this case gene, selection. They include:
 git init
 git clone git@github.com:HorvathLab/mlquiades.git
 cd mlquiades
+```
+
+Environment (if not using uv)
+```
 pip install -e .     #installs necessary packages using pyproject.toml; edit pyproject.toml to fit your package versions if necessary
 ```
 
 ## Usage (default)
 
+If using uv
+```
+uv python pin 3.10
+uv run src/mlquiades/main.py --a sample_data --b output --c CCLE_RNAseq_rsem_genes_tpm_20180929.txt.gz --d palbociclib.csv --e 4 --o 50 --r cdk4_6_genes --s cdk4_6_genes.txt --t cdk4_6_genes.txt --u gencode.v19.genes.v7_model.patched_contigs.gtf.gz
+```
+
+If not using uv
 ```
 python src/mlquiades/main.py --a sample_data --b output --c CCLE_RNAseq_rsem_genes_tpm_20180929.txt.gz --d palbociclib.csv --e 4 --o 50 --r cdk4_6_genes --s cdk4_6_genes.txt --t cdk4_6_genes.txt --u gencode.v19.genes.v7_model.patched_contigs.gtf.gz
 ```
