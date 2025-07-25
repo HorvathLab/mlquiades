@@ -17,7 +17,7 @@ git clone git@github.com:HorvathLab/mlquiades.git
 cd mlquiades
 ```
 
-Environment (if not using uv)
+Setting up Environment (if not using uv)
 ```
 pip install -e .     #installs necessary packages using pyproject.toml; edit pyproject.toml to fit your package versions if necessary
 ```
