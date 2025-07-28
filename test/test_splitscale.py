@@ -16,6 +16,7 @@ def test_splitscale():
     '''
     Unit test the random oversampling and the data splitting.
     '''
+
     fake_data_a = np.concatenate((np.arange(0,10), np.ones(90)), axis=0)
     fake_data_a = np.tile(fake_data_a, (80,1)).transpose()
     fake_data_b = np.arange(0,100)*(-1)
@@ -32,6 +33,7 @@ def test_splitscale():
     A_2, B_2, C_2, D_2, E_2, F_2 = split_scale_data(data_dir=dir_, df=df_,
         y_labels=y_labels, feature_selection='pearson', ros=False,
         cdk4_6_genes_filename=None, cancer_genes_filename=None)
+    
     assert A_1.shape[0] + C_1.shape[0] + E_1.shape[0] > df_.shape[0]
     assert A_2.shape[0] + C_2.shape[0] + E_2.shape[0] == df_.shape[0]
     assert A_2.shape[0] == 60

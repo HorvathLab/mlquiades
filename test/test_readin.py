@@ -6,6 +6,12 @@ sys.path.append(dir_)
 from preprocessing import read_in_data
 
 def test_readin():
+    '''
+    Unit test confirming the read_in_data function produces a
+    data frame variable and a y_labels variable that has a maximum
+    value of 1.
+    '''
+
     data_dir = 'sample_data/'
     ccle_file = 'CCLE_RNAseq_rsem_genes_tpm_20180929.txt.gz'
     drug_file = 'palbociclib.csv'
@@ -13,5 +19,6 @@ def test_readin():
     ic50_cutoff_value = 4
     merged_df_grouped, y_labels = read_in_data(data_dir, ccle_file, drug_file,
             ic50_cutoff_value, genes_gtf)
+    
     assert max(y_labels) == 1
     assert 'merged_df_grouped' in locals()

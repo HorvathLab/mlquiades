@@ -14,6 +14,13 @@ sys.path.append(dir_)
 from processing import pearson
 
 def test_pearson():
+    '''
+    Unit test that the pearson function from processing.py
+    calculates correlation properly across features and returns
+    a dataframe with features that have a rho value of >=.3. It
+    does this by generating synthetic data.
+    '''
+
     fake_data_a = np.arange(0,100)
     fake_data_a = np.tile(fake_data_a, (80,1)).transpose()
     fake_data_b = np.arange(0,100)*(-1)
