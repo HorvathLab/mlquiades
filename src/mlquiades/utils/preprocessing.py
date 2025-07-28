@@ -1,3 +1,4 @@
+import gzip
 import numpy as np
 import pandas as pd
 import pyranges as pr
@@ -15,7 +16,7 @@ def read_in_data(
     '''
     if 'gz' in ccle_file:
         gunzip(data_dir + ccle_file)
-        ccle_file = ccle_file.replace('.gz', '')
+    ccle_file = ccle_file.replace('.gz', '')
     counts_mtx = pd.read_table(data_dir + ccle_file, header=None, sep='\t')
     counts_mtx.iloc[0,0]='Cell line'
     counts_mtx = counts_mtx.T
@@ -24,7 +25,7 @@ def read_in_data(
 
     if 'gz' in genes_gtf:
         gunzip(data_dir + genes_gtf)
-        genes_gtf = genes_gtf.replace('.gz','')
+    genes_gtf = genes_gtf.replace('.gz','')
     gene_def = pr.read_gtf(data_dir + genes_gtf)
     gene_def_df = gene_def.df
 
