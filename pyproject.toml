@@ -1,7 +1,7 @@
 [project]
 name = "mlquiades"
 version = "0.1.0"
-description = "Add your description here"
+description = "mlquiades builds and evaluates 6 binary classification machine learning models that predict cancer cell line sensitivity to the CDK4 drug Palbociclib."
 readme = "README.md"
 requires-python = ">=3.9.4"
 dependencies = [
