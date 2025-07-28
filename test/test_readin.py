@@ -1,5 +1,6 @@
 import os
 import sys
+from sh import gunzip
 
 dir_ = os.path.dirname(os.path.abspath('src/mlquiades/utils/preprocessing.py'))
 sys.path.append(dir_)
@@ -13,9 +14,19 @@ def test_readin():
     '''
 
     data_dir = 'sample_data/'
-    ccle_file = 'CCLE_RNAseq_rsem_genes_tpm_20180929.txt.gz'
+    files = os.listdir('sample_data/')
+    ccle_file = [x for x in files if 'CCLE' in x][0]
     drug_file = 'palbociclib.csv'
-    genes_gtf = 'gencode.v19.genes.v7_model.patched_contigs.gtf.gz'
+    genes_gtf = [x for x in files if 'gencode' in x][0]
+
+    if 'gz' in ccle_file:
+        gunzip(data_dir + ccle_file)
+    ccle_file = ccle_file.replace('.gz', '')
+
+    if 'gz' in genes_gtf:
+        gunzip(data_dir + genes_gtf)
+    genes_gtf = genes_gtf.replace('.gz', '')
+    
     ic50_cutoff_value = 4
     merged_df_grouped, y_labels = read_in_data(data_dir, ccle_file, drug_file,
             ic50_cutoff_value, genes_gtf)
