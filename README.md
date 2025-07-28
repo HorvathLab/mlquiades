@@ -97,7 +97,6 @@ Horvath Lab + Joe Goldfrank
 
 George Washington University
 
-McCormick Genomic and Proteomic Center (MGPC)
-Department of Computer Science
+McCormick Genomic and Proteomic Center (MGPC) & Department of Computer Science
 
 *Questions? siera.martinez@gwu.edu*
