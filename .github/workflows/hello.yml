@@ -1,17 +1,17 @@
 name: Hello World
 
 on:
-        push:
-                branches:
-                        - 'main'
-        pull_request:
-                branches:
-                        - 'main'
+  push:
+   branches:
+    - 'main'
+   pull_request:
+    branches:
+     - 'main'
 
 jobs:
-        hello:
-                runs-on: linux
+  hello:
+   runs-on: linux
 
-        steps:
-                - name: Hello Step
-                  run: echo "Hello World"
+   steps:
+    - name: Hello Step
+      run: echo "Hello World"
