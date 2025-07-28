@@ -10,7 +10,7 @@ These models include: decision tree, gradient boosted decision tree, neural net 
 There are three options for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes (COSMIC); and a Pearson correlation method that keeps only the genes that have >=.3 rho value with the IC50 score in the training dataset only.
 
 ## Installation
-
+ 
 Ubuntu and MacOS are upported. Windows is not currently supported.
 
 ```
