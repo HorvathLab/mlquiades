@@ -11,6 +11,8 @@ There are three options for feature, in this case gene, selection. They include:
 
 ## Installation
 
+Ubuntu and MacOS are upported. Windows is not currently supported.
+
 ```
 git init
 git clone git@github.com:HorvathLab/mlquiades.git
