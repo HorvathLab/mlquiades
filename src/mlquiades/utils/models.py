@@ -105,7 +105,7 @@ def neural_net(
     y_train_ros = y_train_ros.replace(-1,0)
     y_val_ = y_val_.replace(-1,0)
     model.fit(X_train_ros, y_train_ros, validation_data = (X_val_, y_val_),
-              epochs=100, batch_size=50, callbacks=[callback])
+              epochs=100, batch_size=50, callbacks=[callback], verbose=0)
     y_pred = model.predict(X_test)
     y_test = y_test.replace(-1,0)
     
@@ -145,12 +145,12 @@ def neural_net_with_hyperband(
     tuner = keras_tuner.RandomSearch(hypermodel=build_model,
                                      objective='val_accuracy', max_trials=max_trials, 
                                      executions_per_trial=executions_per_trial, overwrite=True, directory=data_dir)
-    tuner.search_space_summary()
+    #tuner.search_space_summary()
     
     stop_early = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                patience=patience, min_delta=min_delta)
     tuner.search(X_train_ros, y_train_ros.replace(-1,0), epochs=epochs,
-                validation_data=(X_val_, y_val_), callbacks=[stop_early])
+                validation_data=(X_val_, y_val_), callbacks=[stop_early], verbose=0)
     best_model = tuner.get_best_models(num_models=1)[0]
     y_pred = best_model.predict(X_test)
     
