@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -21,7 +22,8 @@ def test_splitscale():
     fake_data_b = np.tile(fake_data_b, (20,1)).transpose()
     fake_data = np.concatenate((fake_data_a, fake_data_b), axis=1)
     df_ = pd.DataFrame(fake_data)
-    y_labels = pd.DataFrame(np.concatenate((np.ones(90), np.ones(10) - 1), axis=0))
+    y_labels = pd.DataFrame(np.concatenate((np.ones(90), np.ones(10) - 1),
+        axis=0))
     
     dir_ = 'sample_data/'
     A_1, B_1, C_1, D_1, E_1, F_1 = split_scale_data(data_dir=dir_, df=df_, 

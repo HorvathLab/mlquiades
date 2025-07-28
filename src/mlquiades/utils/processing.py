@@ -1,8 +1,8 @@
 import pandas as pd
 from scipy import stats
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import RandomOverSampler
-from sklearn.preprocessing import StandardScaler
 
 def pearson(
         X_train_, X_val_, X_test, y_train_):
@@ -11,7 +11,8 @@ def pearson(
     in the training data only. Maintains features that have a rho value of greater
     than or equal to .3.
     '''
-    f = X_train_.apply(lambda c: stats.pearsonr(c.to_numpy(),y_train_.to_numpy().reshape((y_train_.shape[0],))), axis=0)
+    f = X_train_.apply(lambda c: stats.pearsonr(c.to_numpy(),y_train_.to_numpy().\
+            reshape((y_train_.shape[0],))), axis=0)
     f=f.transpose()
     f.columns = ['rho','pvalue']
     f = pd.DataFrame(f).sort_values(by='rho', ascending=False)

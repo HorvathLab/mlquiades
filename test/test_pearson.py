@@ -1,19 +1,17 @@
-import os, sys
-
-dir_ = os.path.dirname(os.path.abspath('src/mlquiades/utils/preprocessing.py'))
-sys.path.append(dir_)
-
-from processing import pearson
-
-import numpy as np
-import pandas as pd
+import os
+import sys
 import string
 import random
+import numpy as np
+import pandas as pd
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import RandomOverSampler
 from sklearn.preprocessing import StandardScaler
 
+dir_ = os.path.dirname(os.path.abspath('src/mlquiades/utils/preprocessing.py'))
+sys.path.append(dir_)
+from processing import pearson
 
 def test_pearson():
     fake_data_a = np.arange(0,100)
