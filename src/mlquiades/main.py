@@ -3,6 +3,8 @@ import sys
 import argparse
 from utils import *
 
+print('....... Parsing arguments .......')
+
 if not sys.warnoptions:
     import warnings
     warnings.simplefilter("ignore")
@@ -189,13 +191,17 @@ def main():
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     
+    print('....... Reading in data .......')
     df, y_labels = read_in_data(
         data_dir, ccle_file, drug_file, ic50_cutoff_value, genes_gtf)
+    
+    print('....... Spliting and scaling data .......')
     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test = split_scale_data(
         data_dir=data_dir, df=df, y_labels=y_labels, ros=ros,
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
         cancer_genes_filename=cancer_genes_filename)
     
+    print('....... Building and evaluating models .......')
     evaluation_df = []
     evaluation_df.append(
         decision_tree(
@@ -220,6 +226,7 @@ def main():
         ridge_classifier(
             X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
     
+    print('....... Generating evaluation reports .......')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)
 
