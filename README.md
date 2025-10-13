@@ -1,7 +1,7 @@
 # MLQUIADES
 *2025/07/28*
 
-(pronounced *mel-key-ah-days*)
+(pronounced *em-el-key-ah-days*)
 
 This package takes in bulk RNA cancer cell line sequencing data and GDSC1 IC50 drug sensitivity scores for palbociclib to build and evaluate 6 machine learning models.
 
