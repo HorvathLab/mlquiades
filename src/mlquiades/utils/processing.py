@@ -17,9 +17,9 @@ def pearson(
     f.columns = ['rho','pvalue']
     f = pd.DataFrame(f).sort_values(by='rho', ascending=False)
     genes = f.index[f.rho>=.3]
-    X_train_ = X_train_.loc[:, X_train_.columns.isin(genes)]
-    X_val_ = X_val_.loc[:, X_val_.columns.isin(genes)]
-    X_test = X_test.loc[:, X_test.columns.isin(genes)]
+    X_train_ = X_train_.loc[:, X_train_.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
+    X_val_ = X_val_.loc[:, X_val_.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
+    X_test = X_test.loc[:, X_test.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
 
     return X_train_, y_train_, X_val_, X_test
 
@@ -30,7 +30,7 @@ def cdk4_6_genes(
     features that are in that list.
     '''
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
-    df = df.loc[:, df.columns.isin(genes)]
+    df = df.loc[:, df.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
     
     return df, genes
 
@@ -45,7 +45,7 @@ def cdk4_6_cancer_genes(
     df_, genes = cdk4_6_genes(data_dir, df, cdk4_6_genes_filename)
     df_genes = pd.DataFrame(genes + cancer_genes.tolist())
     genes = df_genes.iloc[:,0].unique().tolist()
-    df = df.loc[:, df.columns.isin(genes)]
+    df = df.loc[:, df.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
     
     return df
 
@@ -69,12 +69,21 @@ def split_scale_data(
                                                                 test_size=.4)
     X_val_, X_test, y_val_, y_test = train_test_split(X_valtest, y_valtest,
                                                       test_size=.5)
-
+    metadata_train = X_train_[['label', 'IC50', 'cell line', 'Tissue']]
+    metadata_val = X_val_[['label', 'IC50', 'cell line', 'Tissue']]
+    metadata_test = X_test[['label', 'IC50', 'cell line', 'Tissue']]
+    X_train_ = X_train_.drop(columns=['label', 'IC50', 'cell line', 'Tissue'])
+    X_val_ = X_val_.drop(columns=['label', 'IC50', 'cell line', 'Tissue'])
+    X_test = X_test.drop(columns=['label', 'IC50', 'cell line', 'Tissue'])
+    
+    metadata = pd.concat([metadata_train, metadata_val, metadata_test])
+    
     if feature_selection == 'pearson':
         X_train_, y_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test,
                                                      y_train_)
     
     scaler = StandardScaler()
+    print(X_train_)
     X_train_ = scaler.fit_transform(X_train_)
     X_val_ = scaler.transform(X_val_)
     X_test = scaler.transform(X_test)
@@ -82,4 +91,4 @@ def split_scale_data(
         ros = RandomOverSampler(random_state=0)
         X_train_, y_train_ = ros.fit_resample(X_train_, y_train_)
 
-    return X_train_, y_train_, X_val_, y_val_, X_test, y_test
+    return X_train_, y_train_, X_val_, y_val_, X_test, y_test, metadata
