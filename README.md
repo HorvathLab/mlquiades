@@ -40,22 +40,86 @@ python src/mlquiades/main.py --a sample_data --b output --c ccle_tpm_20251103.tx
 ## Output
 
 ```
-├── output_dir
-│   ├── plt_confusion_dt_cdk_4_6_genes.png
-│   ├── plt_confusion_gbdt_cdk_4_6_genes.png
-│   ├── plt_confusion_nn_cdk_4_6_genes.png
-│   ├── plt_confusion_nn_hb_cdk_4_6_genes.png
-│   ├── plt_confusion_rf_cdk_4_6_genes.png
-│   ├── plt_confusion_ridge_cdk_4_6_genes.png
-│   ├── plt_rocauc_all_cdk_4_6_genes.png
-│   ├── plt_rocauc_dt_cdk_4_6_genes.png
-│   ├── plt_rocauc_gbdt_cdk_4_6_genes.png
-│   ├── plt_rocauc_nn_cdk_4_6_genes.png
-│   ├── plt_rocauc_nn_hb_cdk_4_6_genes.png
-│   ├── plt_rocauc_rf_cdk_4_6_genes.png
-│   ├── plt_rocauc_ridge_cdk_4_6_genes.png
-│   ├── report.html
-│   └── report.md
+output
+├── all_tissues
+│   ├── plt_rocauc_all_cdk4_6_genes.png
+│   ├── report.html
+│   └── report.md
+└── by_tissue
+    ├── confusion
+    │   ├── plt_confusion_dt_cdk4_6_genes.png
+    │   ├── plt_confusion_dt_leukemia_cdk4_6_genes.png
+    │   ├── plt_confusion_dt_lung_SCLC_cdk4_6_genes.png
+    │   ├── plt_confusion_dt_lymphoma_cdk4_6_genes.png
+    │   ├── plt_confusion_dt_myeloma_cdk4_6_genes.png
+    │   ├── plt_confusion_dt_urogenital_system_cdk4_6_genes.png
+    │   ├── plt_confusion_gbdt_cdk4_6_genes.png
+    │   ├── plt_confusion_gbdt_leukemia_cdk4_6_genes.png
+    │   ├── plt_confusion_gbdt_lung_SCLC_cdk4_6_genes.png
+    │   ├── plt_confusion_gbdt_lymphoma_cdk4_6_genes.png
+    │   ├── plt_confusion_gbdt_myeloma_cdk4_6_genes.png
+    │   ├── plt_confusion_gbdt_urogenital_system_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_hb_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_hb_leukemia_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_hb_lung_SCLC_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_hb_lymphoma_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_hb_myeloma_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_hb_urogenital_system_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_leukemia_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_lung_SCLC_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_lymphoma_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_myeloma_cdk4_6_genes.png
+    │   ├── plt_confusion_nn_urogenital_system_cdk4_6_genes.png
+    │   ├── plt_confusion_rf_cdk4_6_genes.png
+    │   ├── plt_confusion_rf_leukemia_cdk4_6_genes.png
+    │   ├── plt_confusion_rf_lung_SCLC_cdk4_6_genes.png
+    │   ├── plt_confusion_rf_lymphoma_cdk4_6_genes.png
+    │   ├── plt_confusion_rf_myeloma_cdk4_6_genes.png
+    │   ├── plt_confusion_rf_urogenital_system_cdk4_6_genes.png
+    │   ├── plt_confusion_ridge_cdk4_6_genes.png
+    │   ├── plt_confusion_ridge_leukemia_cdk4_6_genes.png
+    │   ├── plt_confusion_ridge_lung_SCLC_cdk4_6_genes.png
+    │   ├── plt_confusion_ridge_lymphoma_cdk4_6_genes.png
+    │   ├── plt_confusion_ridge_myeloma_cdk4_6_genes.png
+    │   └── plt_confusion_ridge_urogenital_system_cdk4_6_genes.png
+    └── rocauc
+        ├── plt_rocauc_dt_cdk4_6_genes.png
+        ├── plt_rocauc_dt_leukemia_cdk4_6_genes.png
+        ├── plt_rocauc_dt_lung_SCLC_cdk4_6_genes.png
+        ├── plt_rocauc_dt_lymphoma_cdk4_6_genes.png
+        ├── plt_rocauc_dt_myeloma_cdk4_6_genes.png
+        ├── plt_rocauc_dt_urogenital_system_cdk4_6_genes.png
+        ├── plt_rocauc_gbdt_cdk4_6_genes.png
+        ├── plt_rocauc_gbdt_leukemia_cdk4_6_genes.png
+        ├── plt_rocauc_gbdt_lung_SCLC_cdk4_6_genes.png
+        ├── plt_rocauc_gbdt_lymphoma_cdk4_6_genes.png
+        ├── plt_rocauc_gbdt_myeloma_cdk4_6_genes.png
+        ├── plt_rocauc_gbdt_urogenital_system_cdk4_6_genes.png
+        ├── plt_rocauc_nn_cdk4_6_genes.png
+        ├── plt_rocauc_nn_hb_cdk4_6_genes.png
+        ├── plt_rocauc_nn_hb_leukemia_cdk4_6_genes.png
+        ├── plt_rocauc_nn_hb_lung_SCLC_cdk4_6_genes.png
+        ├── plt_rocauc_nn_hb_lymphoma_cdk4_6_genes.png
+        ├── plt_rocauc_nn_hb_myeloma_cdk4_6_genes.png
+        ├── plt_rocauc_nn_hb_urogenital_system_cdk4_6_genes.png
+        ├── plt_rocauc_nn_leukemia_cdk4_6_genes.png
+        ├── plt_rocauc_nn_lung_SCLC_cdk4_6_genes.png
+        ├── plt_rocauc_nn_lymphoma_cdk4_6_genes.png
+        ├── plt_rocauc_nn_myeloma_cdk4_6_genes.png
+        ├── plt_rocauc_nn_urogenital_system_cdk4_6_genes.png
+        ├── plt_rocauc_rf_cdk4_6_genes.png
+        ├── plt_rocauc_rf_leukemia_cdk4_6_genes.png
+        ├── plt_rocauc_rf_lung_SCLC_cdk4_6_genes.png
+        ├── plt_rocauc_rf_lymphoma_cdk4_6_genes.png
+        ├── plt_rocauc_rf_myeloma_cdk4_6_genes.png
+        ├── plt_rocauc_rf_urogenital_system_cdk4_6_genes.png
+        ├── plt_rocauc_ridge_cdk4_6_genes.png
+        ├── plt_rocauc_ridge_leukemia_cdk4_6_genes.png
+        ├── plt_rocauc_ridge_lung_SCLC_cdk4_6_genes.png
+        ├── plt_rocauc_ridge_lymphoma_cdk4_6_genes.png
+        ├── plt_rocauc_ridge_myeloma_cdk4_6_genes.png
+        └── plt_rocauc_ridge_urogenital_system_cdk4_6_genes.png
 ```
 
 ## Usage (thorough)
