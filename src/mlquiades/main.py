@@ -202,30 +202,24 @@ def main():
         cancer_genes_filename=cancer_genes_filename)
     
     print('....... Building and evaluating models .......')
-    evaluation_df = []
-    evaluation_df.append(
-        decision_tree(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
-    evaluation_df.append(
-        gradient_boosted_decision_tree(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
-    evaluation_df.append(
-        neural_net(
-            X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, output_dir,
-            feature_selection))
-    evaluation_df.append(
-        neural_net_with_hyperband(
-            X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
-            step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-            patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-            feature_selection))
-    evaluation_df.append(
-        random_forest(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
-    evaluation_df.append(
-        ridge_classifier(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
-    
+    dt = decision_tree(
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
+    gbdt = gradient_boosted_decision_tree(
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
+    nn = neural_net(
+        X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, output_dir,
+        feature_selection, metadata)
+    nn_hb = neural_net_with_hyperband(
+        X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
+        step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
+        patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
+        feature_selection, metadata)
+    rf = random_forest(
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
+    ridge = ridge_classifier(
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
+    evaluation_df = pd.concat([dt, gbdt, nn, nn_hb, rf, ridge])
+
     print('....... Generating evaluation reports .......')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)

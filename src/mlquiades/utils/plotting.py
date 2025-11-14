@@ -11,18 +11,18 @@ def plot_combined_rocauc(
     Creates barplot of ROC AUC scores across all models. Saves as png.
     '''
     evaluation_df = pd.DataFrame(evaluation_df)
-    evaluation_df.columns = ['acc','f1', 'rocauc']
-    evaluation_df['model'] = ['dt', 'gbdt', 'nn', 'nn w/ hyperband',
-                              'random forest', 'ridgeclassifier']
+    evaluation_df.columns = ['model', 'tissue', 'acc', 'f1', 'rocauc']
 
-    df__ = evaluation_df.drop(columns=['acc','f1']).melt('model')
+    df__ = evaluation_df.drop(columns=['acc', 'f1']).melt(id_vars=['model','tissue'])
     df__['value'] = np.array(df__['value'],dtype='float')
     df__ = pd.DataFrame({'model': df__['model'], 'variable': df__['variable'],
-                         'value': df__['value']})
+                         'value': df__['value'], 'tissue': df__['tissue']})
 
-    bp = sns.barplot(df__, x='variable', y='value', hue='model')
+    bp = sns.barplot(df__, x='tissue', y='value', hue='model')
     bp.set(xlabel=' ', ylabel=' ', title=feature_selection)
+    bp.set_xticklabels(bp.get_xticklabels(), rotation=45)
     fig = bp.get_figure()
+    plt.tight_layout()
     fig.savefig(output_dir + '/' + 'plt_rocauc_all_' + feature_selection + '.png')
 
 def plot_confusion_matrix(

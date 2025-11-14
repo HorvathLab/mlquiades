@@ -41,7 +41,7 @@ def evaluate_keras(
     return acc, f1_metric, rocauc, fpr, tpr
 
 def decision_tree(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
         plt_confusion=True, plt_rocauc=True):
     '''
     Builds decision tree model. Fits the model to the randomly oversampled
@@ -50,20 +50,38 @@ def decision_tree(
     '''
     clf = tree.DecisionTreeClassifier(max_depth=2)
     clf = clf.fit(X_train_ros, y_train_ros)
-    y_pred = clf.predict(X_test)
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+    evaluation_df = []
+    for tissue in metadata_test['Tissue'].unique():
+        X_test_tissue = X_test[metadata_test['Tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
+        metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            if len(y_test_tissue.unique())>1:
+                y_pred = clf.predict(X_test_tissue)            
+                acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
+                if plt_confusion:
+                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                                        model_name='dt_' + tissue, nn=False)
+                if plt_rocauc:
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='dt_' + tissue)
+                evaluation_df.append(['dt', tissue, acc, f1, rocauc])
     
+    y_pred = clf.predict(X_test)
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     if plt_confusion:
         plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection,
-                              model_name='dt', nn=False)
+                            model_name='dt', nn=False)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='dt')
     
-    return acc, f1, rocauc
+    evaluation_df.append(['dt', 'all_tissues', acc, f1, rocauc])
+    
+    return pd.DataFrame(evaluation_df)
 
 def gradient_boosted_decision_tree(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
-        plt_confusion=True, plt_rocauc=True):
+        metadata, plt_confusion=True, plt_rocauc=True):
     '''
     Builds gradient-boosted decision tree model. Fits the model to the randomly
     oversampled training data. Makes predictions on the testing dataset. Plots
@@ -72,8 +90,26 @@ def gradient_boosted_decision_tree(
     clf = GradientBoostingClassifier(n_estimators=2, learning_rate=1.5,
                                      max_depth=2,random_state=0).fit(X_train_ros, y_train_ros)
     clf = clf.fit(X_train_ros, y_train_ros)
-    y_pred = clf.predict(X_test)
     
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+    
+    evaluation_df = []
+    for tissue in metadata_test['Tissue'].unique():
+        X_test_tissue = X_test[metadata_test['Tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
+        metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            if len(y_test_tissue.unique())>1:
+                y_pred = clf.predict(X_test_tissue)            
+                acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
+                if plt_confusion:
+                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                                        model_name='gbdt_' + tissue, nn=False)
+                if plt_rocauc:
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='gbdt_' + tissue)
+                evaluation_df.append(['gbdt', tissue, acc, f1, rocauc])
+    
+    y_pred = clf.predict(X_test)
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     if plt_confusion:
         plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection, 
@@ -81,11 +117,13 @@ def gradient_boosted_decision_tree(
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='gbdt')
     
-    return acc, f1, rocauc
+    evaluation_df.append(['gbdt', 'all_tissues', acc, f1, rocauc])
+
+    return pd.DataFrame(evaluation_df)
 
 def neural_net(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, output_dir,
-        feature_selection, plt_confusion=True, plt_rocauc=True):
+        feature_selection, metadata, plt_confusion=True, plt_rocauc=True):
     '''
     Builds neural net using keras. Fits the model to the randomly oversampled
     training data. Makes predictions on the testing dataset. Plots confusion
@@ -100,14 +138,34 @@ def neural_net(
     callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=3,
                                              min_delta=.01)
     optimiizer = keras.optimizers.Adam(learning_rate=.0001)
-
+    
     model.compile(loss='binary_crossentropy', optimizer=optimiizer, metrics=['accuracy'])
     y_train_ros = y_train_ros.replace(-1,0)
     y_val_ = y_val_.replace(-1,0)
+    y_test = y_test.replace(-1,0)
     model.fit(X_train_ros, y_train_ros, validation_data = (X_val_, y_val_),
               epochs=100, batch_size=50, callbacks=[callback], verbose=0)
+    
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+    
+    evaluation_df = []
+    for tissue in metadata_test['Tissue'].unique():
+        X_test_tissue = X_test[metadata_test['Tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue].reset_index(drop=True)
+        y_test_tissue = y_test_tissue.replace(-1,0)
+        metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            if len(y_test_tissue.unique())>1:
+                y_pred = model.predict(X_test_tissue)            
+                acc, f1, rocauc, fpr, tpr = evaluate_keras(model, X_test_tissue, y_test_tissue, y_pred)
+                if plt_confusion:
+                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                                        model_name='nn_' + tissue, nn=False)
+                if plt_rocauc:
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_' + tissue)
+                evaluation_df.append(['nn', tissue, acc, f1, rocauc])
+    
     y_pred = model.predict(X_test)
-    y_test = y_test.replace(-1,0)
     
     acc, f1, rocauc, fpr, tpr = evaluate_keras(model, X_test, y_test, y_pred)
     if plt_confusion:
@@ -116,13 +174,15 @@ def neural_net(
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn')
     
-    return acc, f1, rocauc
+    evaluation_df.append(['nn', 'all_tissues', acc, f1, rocauc])
+    
+    return pd.DataFrame(evaluation_df)
 
 def neural_net_with_hyperband(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
         step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
         patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-        feature_selection, plt_confusion=True, plt_rocauc=True):
+        feature_selection, metadata, plt_confusion=True, plt_rocauc=True):
     '''
     Builds hyperband-tuned neural net using keras. Fits the model to the randomly
     oversampled training data. Makes predictions on the testing dataset. Plots
@@ -139,7 +199,8 @@ def neural_net_with_hyperband(
         model.compile(optimizer='adam', loss='binary_crossentropy',
                       metrics=['accuracy'])
         return model
-
+    
+    y_test = y_test.replace(-1,0)
     build_model(keras_tuner.HyperParameters())
 
     tuner = keras_tuner.RandomSearch(hypermodel=build_model,
@@ -150,8 +211,28 @@ def neural_net_with_hyperband(
     stop_early = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                patience=patience, min_delta=min_delta)
     tuner.search(X_train_ros, y_train_ros.replace(-1,0), epochs=epochs,
-                validation_data=(X_val_, y_val_), callbacks=[stop_early], verbose=0)
+                validation_data=(X_val_, y_val_.replace(-1,0)), callbacks=[stop_early], verbose=0)
     best_model = tuner.get_best_models(num_models=1)[0]
+    
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+    
+    evaluation_df = []
+    for tissue in metadata_test['Tissue'].unique():
+        X_test_tissue = X_test[metadata_test['Tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
+        # y_test_tissue = y_test_tissue.replace(-1,0)
+        metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            if len(y_test_tissue.unique())>1:
+                y_pred = best_model.predict(X_test_tissue)            
+                acc, f1, rocauc, fpr, tpr = evaluate_keras(best_model, X_test_tissue, y_test_tissue, y_pred)
+                if plt_confusion:
+                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                                        model_name='nn_hb_' + tissue, nn=False)
+                if plt_rocauc:
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_hb_' + tissue)
+                evaluation_df.append(['nn_hb', tissue, acc, f1, rocauc])
+    
     y_pred = best_model.predict(X_test)
     
     acc, f1, rocauc, fpr, tpr = evaluate_keras(best_model, X_test, y_test, y_pred)
@@ -161,11 +242,13 @@ def neural_net_with_hyperband(
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_hb')
     
-    return acc, f1, rocauc
+    evaluation_df.append(['nn_hb', 'all_tissues', acc, f1, rocauc])
+    
+    return pd.DataFrame(evaluation_df)
 
 def random_forest(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
-        max_depth=2, random_state=0, plt_confusion=True, plt_rocauc=True):
+        metadata, max_depth=2, random_state=0, plt_confusion=True, plt_rocauc=True):
     '''
     Builds random forest model. Fits the model to the randomly oversampled
     training data. Makes predictions on the testing dataset. Plots confusion
@@ -173,6 +256,25 @@ def random_forest(
     '''
     clf = RandomForestClassifier(max_depth=max_depth, random_state=random_state)
     clf = clf.fit(X_train_ros, y_train_ros)
+    
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+    
+    evaluation_df = []
+    for tissue in metadata_test['Tissue'].unique():
+        X_test_tissue = X_test[metadata_test['Tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
+        metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            if len(y_test_tissue.unique())>1:
+                y_pred = clf.predict(X_test_tissue)            
+                acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
+                if plt_confusion:
+                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                                        model_name='rf_' + tissue, nn=False)
+                if plt_rocauc:
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='rf_' + tissue)
+                evaluation_df.append(['rf', tissue, acc, f1, rocauc])
+
     y_pred = clf.predict(X_test)
     
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
@@ -182,17 +284,38 @@ def random_forest(
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='rf')
     
-    return acc, f1, rocauc
+    evaluation_df.append(['rf', 'all_tissues', acc, f1, rocauc])
+    
+    return pd.DataFrame(evaluation_df)
 
 def ridge_classifier(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
-        plt_confusion=True, plt_rocauc=True):
+        metadata, plt_confusion=True, plt_rocauc=True):
     '''
     Builds ridge classifier model. Fits the model to the randomly oversampled
     training data. Makes predictions on the testing dataset. Plots confusion
     matrix and ROCAUC plot.
     '''
     clf = RidgeClassifier().fit(X_train_ros, y_train_ros)
+    
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+    
+    evaluation_df = []
+    for tissue in metadata_test['Tissue'].unique():
+        X_test_tissue = X_test[metadata_test['Tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
+        metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            if len(y_test_tissue.unique())>1:
+                y_pred = clf.predict(X_test_tissue)
+                acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
+                if plt_confusion:
+                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                                        model_name='ridge_' + tissue, nn=False)
+                if plt_rocauc:
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge_' + tissue)
+                evaluation_df.append(['ridge', tissue, acc, f1, rocauc])
+    
     y_pred = clf.predict(X_test)
     
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
@@ -202,4 +325,6 @@ def ridge_classifier(
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge')
     
-    return acc, f1, rocauc
+    evaluation_df.append(['ridge', 'all_tissues', acc, f1, rocauc])
+    
+    return pd.DataFrame(evaluation_df)
