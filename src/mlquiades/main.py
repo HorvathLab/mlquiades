@@ -190,17 +190,23 @@ def main():
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
+    if not os.path.isdir(output_dir + '/all_tissues/'):
+        os.mkdir(output_dir + '/all_tissues')
+    if not os.path.isdir(output_dir + '/by_tissue/'):
+        os.mkdir(output_dir + '/by_tissue')
+    if not os.path.isdir(output_dir + '/by_tissue/confusion'):
+        os.mkdir(output_dir + '/by_tissue/confusion')
+    if not os.path.isdir(output_dir + '/by_tissue/rocauc'):
+        os.mkdir(output_dir + '/by_tissue/rocauc')
     
     print('....... Reading in data .......')
     df, y_labels = read_in_data_new(
         data_dir, ccle_file, drug_file, ic50_cutoff_value, genes_gtf)
-    
     print('....... Splitting and scaling data .......')
     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
         data_dir=data_dir, df=df, y_labels=y_labels, ros=ros,
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
         cancer_genes_filename=cancer_genes_filename)
-    
     print('....... Building and evaluating models .......')
     dt = decision_tree(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
@@ -222,6 +228,7 @@ def main():
 
     print('....... Generating evaluation reports .......')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
+    plot_combined_acc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)
 
 if __name__=='__main__':

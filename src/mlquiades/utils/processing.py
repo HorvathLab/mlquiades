@@ -85,7 +85,6 @@ def split_scale_data(
     df_resistant = df[df['label']==1]
     
     for tissue in df_resistant['Tissue'].unique():
-        print(tissue)
         df_resistant_tissue = df_resistant[df_resistant['Tissue']==tissue]
         if df_resistant_tissue.shape[0]>3:
             X_train_tissue, X_valtest_tissue, y_train_tissue, y_valtest_tissue = train_test_split(
@@ -99,8 +98,6 @@ def split_scale_data(
             y_train_resistant = pd.concat([y_train_resistant, y_train_tissue])
             y_val_resistant = pd.concat([y_val_resistant, y_val_tissue])
             y_test_resistant = pd.concat([y_test_resistant, y_test_tissue])
-        else:
-            print(df_resistant_tissue.shape[0])
     
     X_train_ = pd.concat([X_train_sensitive, X_train_resistant])    
     X_val_ = pd.concat([X_val_sensitive, X_val_resistant])

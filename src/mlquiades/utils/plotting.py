@@ -10,22 +10,26 @@ def plot_combined_rocauc(
     '''
     Creates barplot of ROC AUC scores across all models. Saves as png.
     '''
-    evaluation_df.columns = ['model', 'tissue', 'acc', 'f1', 'rocauc']
+    evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc']
     evaluation_df = pd.DataFrame(evaluation_df.sort_values(by=['tissue', 'model'],
                                                            ascending=[True, True]))
     evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
     evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
     evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
+    evaluation_df.to_csv(output_dir + '/all_tissues/evaluation.csv', header=True, 
+                         index=False)
     
-    df__ = evaluation_df.drop(columns=['acc', 'f1']).melt(id_vars=['model','tissue'])
+    df__ = evaluation_df.drop(columns=['acc']).melt(id_vars=['model','tissue'])
     df__['value'] = np.array(df__['value'],dtype='float')
     df__ = pd.DataFrame({'model': df__['model'], 'variable': df__['variable'],
                          'value': df__['value'], 'tissue': df__['tissue']})
 
     bp = sns.barplot(df__, x='tissue', y='value', hue='model')
     handles, _ = bp.get_legend_handles_labels()
-    plt.legend(handles[0:6], ['dt', 'gbdt', 'nn', 'nn_hb', 'rf', 'ridge'], loc="lower left", bbox_to_anchor=(1.01, 0.29), title="Model")
-    bp.set(xlabel=' ', ylabel=' ', title=feature_selection)
+    plt.legend(handles[0:6], ['dt', 'gbdt', 'nn', 'nn_hb', 'rf', 'ridge'], loc="lower left", 
+               bbox_to_anchor=(1.01, 0.29), title="Model")
+    bp.set(xlabel=' ', ylabel=' ', title='ROCAUC Evaluation Using ' + feature_selection + 
+           ' Features')
     bp.set_xticklabels(bp.get_xticklabels(), rotation=90)
     fig = bp.get_figure()
     plt.tight_layout()
@@ -36,22 +40,24 @@ def plot_combined_acc(
     '''
     Creates barplot of accuracy scores across all models. Saves as png.
     '''
-    evaluation_df.columns = ['model', 'tissue', 'acc', 'f1', 'rocauc']
+    evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc']
     evaluation_df = pd.DataFrame(evaluation_df.sort_values(by=['tissue', 'model'],
                                                            ascending=[True, True]))
     evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
     evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
     evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
     
-    df__ = evaluation_df.drop(columns=['f1', 'rocauc']).melt(id_vars=['model','tissue'])
+    df__ = evaluation_df.drop(columns=['rocauc']).melt(id_vars=['model','tissue'])
     df__['value'] = np.array(df__['value'],dtype='float')
     df__ = pd.DataFrame({'model': df__['model'], 'variable': df__['variable'],
                          'value': df__['value'], 'tissue': df__['tissue']})
 
     bp = sns.barplot(df__, x='tissue', y='value', hue='model')
     handles, _ = bp.get_legend_handles_labels()
-    plt.legend(handles[0:6], ['dt', 'gbdt', 'nn', 'nn_hb', 'rf', 'ridge'], loc="lower left", bbox_to_anchor=(1.01, 0.29), title="Model")
-    bp.set(xlabel=' ', ylabel=' ', title=feature_selection)
+    plt.legend(handles[0:6], ['dt', 'gbdt', 'nn', 'nn_hb', 'rf', 'ridge'], loc="lower left",
+               bbox_to_anchor=(1.01, 0.29), title="Model")
+    bp.set(xlabel=' ', ylabel=' ', title='Accuracy Evaluation Using ' + feature_selection 
+           + ' Features')
     bp.set_xticklabels(bp.get_xticklabels(), rotation=90)
     fig = bp.get_figure()
     plt.tight_layout()
