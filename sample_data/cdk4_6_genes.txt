@@ -3,7 +3,6 @@
 "ABCG2"
 "ABCB1"
 "MCL1"
-"MYC"
 "AKT3"
 "BCL2L11"
 "C8orf44-SGK3"
