@@ -57,20 +57,23 @@ def decision_tree(
         y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
         metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
         if X_test_tissue.shape[0]>0:
-            if len(y_test_tissue.unique())>1:
-                y_pred = clf.predict(X_test_tissue)            
+            y_pred = clf.predict(X_test_tissue)
+            if len(y_test_tissue['label'].unique())>1:
                 acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='dt_' + tissue, nn=False)
                 if plt_rocauc:
                     plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='dt_' + tissue)
                 evaluation_df.append(['dt', tissue, acc, f1, rocauc])
+            else:
+                acc = metrics.accuracy_score(y_test_tissue, y_pred)
+                evaluation_df.append(['dt', tissue, acc, 0, 0])
     
     y_pred = clf.predict(X_test)
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     if plt_confusion:
-        plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection,
+        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                             model_name='dt', nn=False)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='dt')
@@ -99,20 +102,23 @@ def gradient_boosted_decision_tree(
         y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
         metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
         if X_test_tissue.shape[0]>0:
-            if len(y_test_tissue.unique())>1:
-                y_pred = clf.predict(X_test_tissue)            
+            y_pred = clf.predict(X_test_tissue)
+            if len(y_test_tissue['label'].unique())>1:            
                 acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='gbdt_' + tissue, nn=False)
                 if plt_rocauc:
                     plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='gbdt_' + tissue)
                 evaluation_df.append(['gbdt', tissue, acc, f1, rocauc])
+            else:
+                acc = metrics.accuracy_score(y_test_tissue, y_pred)
+                evaluation_df.append(['gbdt', tissue, acc, 0, 0])
     
     y_pred = clf.predict(X_test)
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     if plt_confusion:
-        plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection, 
+        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection, 
                               model_name='gbdt', nn=False)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='gbdt')
@@ -154,22 +160,25 @@ def neural_net(
         y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue].reset_index(drop=True)
         y_test_tissue = y_test_tissue.replace(-1,0)
         metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
-        if X_test_tissue.shape[0]>0:
-            if len(y_test_tissue.unique())>1:
-                y_pred = model.predict(X_test_tissue)            
-                acc, f1, rocauc, fpr, tpr = evaluate_keras(model, X_test_tissue, y_test_tissue, y_pred)
+        if X_test_tissue.shape[0]>0:          
+            y_pred = model.predict(X_test_tissue)         
+            if len(y_test_tissue['label'].unique())>1:   
+                acc, f1, rocauc, fpr, tpr = evaluate_keras(model, X_test_tissue, y_test_tissue['label'], y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='nn_' + tissue, nn=False)
                 if plt_rocauc:
                     plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_' + tissue)
                 evaluation_df.append(['nn', tissue, acc, f1, rocauc])
+            else:
+                loss, acc = model.evaluate(X_test_tissue, y_test_tissue)
+                evaluation_df.append(['nn', tissue, acc, 0, 0])
     
     y_pred = model.predict(X_test)
     
-    acc, f1, rocauc, fpr, tpr = evaluate_keras(model, X_test, y_test, y_pred)
+    acc, f1, rocauc, fpr, tpr = evaluate_keras(model, X_test, y_test['label'], y_pred)
     if plt_confusion:
-        plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection,
+        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                               model_name='nn', nn=True)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn')
@@ -223,21 +232,24 @@ def neural_net_with_hyperband(
         # y_test_tissue = y_test_tissue.replace(-1,0)
         metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
         if X_test_tissue.shape[0]>0:
-            if len(y_test_tissue.unique())>1:
-                y_pred = best_model.predict(X_test_tissue)            
-                acc, f1, rocauc, fpr, tpr = evaluate_keras(best_model, X_test_tissue, y_test_tissue, y_pred)
+            y_pred = best_model.predict(X_test_tissue)         
+            if len(y_test_tissue['label'].unique())>1:          
+                acc, f1, rocauc, fpr, tpr = evaluate_keras(best_model, X_test_tissue, y_test_tissue['label'], y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='nn_hb_' + tissue, nn=False)
                 if plt_rocauc:
                     plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_hb_' + tissue)
                 evaluation_df.append(['nn_hb', tissue, acc, f1, rocauc])
+            else:
+                loss, acc = best_model.evaluate(X_test_tissue, y_test_tissue)
+                evaluation_df.append(['nn_hb', tissue, acc, 0, 0])
     
     y_pred = best_model.predict(X_test)
     
-    acc, f1, rocauc, fpr, tpr = evaluate_keras(best_model, X_test, y_test, y_pred)
+    acc, f1, rocauc, fpr, tpr = evaluate_keras(best_model, X_test, y_test['label'], y_pred)
     if plt_confusion:
-        plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection,
+        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                             model_name='nn_hb', nn=True)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_hb')
@@ -265,21 +277,24 @@ def random_forest(
         y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
         metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
         if X_test_tissue.shape[0]>0:
-            if len(y_test_tissue.unique())>1:
-                y_pred = clf.predict(X_test_tissue)            
+            y_pred = clf.predict(X_test_tissue)         
+            if len(y_test_tissue['label'].unique())>1:            
                 acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='rf_' + tissue, nn=False)
                 if plt_rocauc:
                     plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='rf_' + tissue)
                 evaluation_df.append(['rf', tissue, acc, f1, rocauc])
+            else:
+                acc = metrics.accuracy_score(y_test_tissue, y_pred)
+                evaluation_df.append(['rf', tissue, acc, 0, 0])
 
     y_pred = clf.predict(X_test)
     
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     if plt_confusion:
-        plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection,
+        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                               model_name='rf', nn=False)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='rf')
@@ -306,21 +321,24 @@ def ridge_classifier(
         y_test_tissue = y_test.reset_index(drop=True)[metadata_test['Tissue']==tissue]
         metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
         if X_test_tissue.shape[0]>0:
-            if len(y_test_tissue.unique())>1:
-                y_pred = clf.predict(X_test_tissue)
+            y_pred = clf.predict(X_test_tissue)         
+            if len(y_test_tissue['label'].unique())>1:
                 acc, f1, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue, y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='ridge_' + tissue, nn=False)
                 if plt_rocauc:
                     plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge_' + tissue)
                 evaluation_df.append(['ridge', tissue, acc, f1, rocauc])
+            else:
+                acc = metrics.accuracy_score(y_test_tissue, y_pred)
+                evaluation_df.append(['ridge', tissue, acc, 0, 0])
     
     y_pred = clf.predict(X_test)
     
     acc, f1, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     if plt_confusion:
-        plot_confusion_matrix(y_test, y_pred, output_dir, feature_selection,
+        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                               model_name='ridge', nn=False)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge')

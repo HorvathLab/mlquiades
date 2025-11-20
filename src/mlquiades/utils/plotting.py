@@ -10,20 +10,52 @@ def plot_combined_rocauc(
     '''
     Creates barplot of ROC AUC scores across all models. Saves as png.
     '''
-    evaluation_df = pd.DataFrame(evaluation_df)
     evaluation_df.columns = ['model', 'tissue', 'acc', 'f1', 'rocauc']
-
+    evaluation_df = pd.DataFrame(evaluation_df.sort_values(by=['tissue', 'model'],
+                                                           ascending=[True, True]))
+    evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
+    evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
+    evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
+    
     df__ = evaluation_df.drop(columns=['acc', 'f1']).melt(id_vars=['model','tissue'])
     df__['value'] = np.array(df__['value'],dtype='float')
     df__ = pd.DataFrame({'model': df__['model'], 'variable': df__['variable'],
                          'value': df__['value'], 'tissue': df__['tissue']})
 
     bp = sns.barplot(df__, x='tissue', y='value', hue='model')
+    handles, _ = bp.get_legend_handles_labels()
+    plt.legend(handles[0:6], ['dt', 'gbdt', 'nn', 'nn_hb', 'rf', 'ridge'], loc="lower left", bbox_to_anchor=(1.01, 0.29), title="Model")
     bp.set(xlabel=' ', ylabel=' ', title=feature_selection)
-    bp.set_xticklabels(bp.get_xticklabels(), rotation=45)
+    bp.set_xticklabels(bp.get_xticklabels(), rotation=90)
     fig = bp.get_figure()
     plt.tight_layout()
-    fig.savefig(output_dir + '/' + 'plt_rocauc_all_' + feature_selection + '.png')
+    fig.savefig(output_dir + '/all_tissues/plt_rocauc_all_' + feature_selection + '.png')
+
+def plot_combined_acc(
+        evaluation_df, feature_selection, output_dir):
+    '''
+    Creates barplot of accuracy scores across all models. Saves as png.
+    '''
+    evaluation_df.columns = ['model', 'tissue', 'acc', 'f1', 'rocauc']
+    evaluation_df = pd.DataFrame(evaluation_df.sort_values(by=['tissue', 'model'],
+                                                           ascending=[True, True]))
+    evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
+    evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
+    evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
+    
+    df__ = evaluation_df.drop(columns=['f1', 'rocauc']).melt(id_vars=['model','tissue'])
+    df__['value'] = np.array(df__['value'],dtype='float')
+    df__ = pd.DataFrame({'model': df__['model'], 'variable': df__['variable'],
+                         'value': df__['value'], 'tissue': df__['tissue']})
+
+    bp = sns.barplot(df__, x='tissue', y='value', hue='model')
+    handles, _ = bp.get_legend_handles_labels()
+    plt.legend(handles[0:6], ['dt', 'gbdt', 'nn', 'nn_hb', 'rf', 'ridge'], loc="lower left", bbox_to_anchor=(1.01, 0.29), title="Model")
+    bp.set(xlabel=' ', ylabel=' ', title=feature_selection)
+    bp.set_xticklabels(bp.get_xticklabels(), rotation=90)
+    fig = bp.get_figure()
+    plt.tight_layout()
+    fig.savefig(output_dir + '/all_tissues/plt_acc_all_' + feature_selection + '.png')
 
 def plot_confusion_matrix(
         y_test, y_pred, output_dir, feature_selection, model_name, nn=False):
@@ -34,14 +66,14 @@ def plot_confusion_matrix(
         ConfusionMatrixDisplay.from_predictions(
             np.array([y_test.astype(np.float32)]).T,
             (y_pred).astype(int),display_labels=[0,1])
-        plt.savefig(output_dir + '/' + 'plt_confusion_' + model_name + '_'
+        plt.savefig(output_dir + '/by_tissue/confusion/plt_confusion_' + model_name + '_'
                     + feature_selection + '.png')
         plt.close()
     else:
         ConfusionMatrixDisplay.from_predictions(
             np.array([y_test.replace(-1,0).astype(np.float32)]).T,
             (y_pred>=.5).astype(int),display_labels=[0,1])
-        plt.savefig(output_dir + '/' + 'plt_confusion_' + model_name + '_'
+        plt.savefig(output_dir + '/by_tissue/confusion/plt_confusion_' + model_name + '_'
                     + feature_selection + '.png')
         plt.close()
 
@@ -52,11 +84,11 @@ def plot_rocauc(
     '''
     plt.plot(fpr,tpr)
     plt.plot([0,1],[0,1],'--')
-    plt.title('ROC AUC '+model_name+' '+feature_selection)
+    plt.title('ROC AUC ' + model_name + ' ' + feature_selection)
     plt.xlabel('fpr')
     plt.ylabel('tpr')
-    plt.savefig(output_dir + '/' + 'plt_rocauc_' + model_name + '_'
-                + feature_selection +'.png')
+    plt.savefig(output_dir + '/by_tissue/rocauc/plt_rocauc_' + model_name + '_'
+                + feature_selection + '.png')
     plt.close()
 
 def stitch_pngs(
@@ -80,15 +112,12 @@ def stitch_pngs(
 
     report_str.append('![rocauc all](plt_rocauc_all_' + feature_selection + '.png)')
     
-    with open(output_dir + '/' + 'report.md', 'w') as f:
+    with open(output_dir + '/all_tissues/report.md', 'w') as f:
         for item in report_str:
             f.write(item)
             f.write('\n')
-    with open(output_dir + '/' + 'report.md', 'r') as f:
+    with open(output_dir + '/all_tissues/report.md', 'r') as f:
         md = f.read()
     html = markdown.markdown(md)
-    with open(output_dir + '/' + 'report.html', 'w') as f:
+    with open(output_dir + '/all_tissues/report.html', 'w') as f:
         f.write(html)
-
-
-
