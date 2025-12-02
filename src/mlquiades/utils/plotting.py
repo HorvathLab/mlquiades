@@ -134,7 +134,8 @@ def plot_combined_acc(
     for boolean, weight_count in weight_counts.items():
         p = ax.bar(models, weight_count, width, label=boolean, bottom=bottom)
         bottom += weight_count
-        ax.bar_label(p, labels=df__['n_'+str(count)].to_numpy().flatten(), label_type='center')
+        ax.bar_label(p, labels=df__['n_' + str(count)].to_numpy().flatten(),
+                     label_type='center')
         count += 1
 
     ax.legend(loc="upper right")
