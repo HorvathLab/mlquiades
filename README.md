@@ -1,5 +1,5 @@
 # MLQUIADES
-*2025/11/14*
+*2025/12/02*
 
 (pronounced *em-el-key-ah-days*)
 
@@ -9,7 +9,7 @@ These models include: decision tree, gradient boosted decision tree, neural net 
 
 There are three options for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes (COSMIC); and a Pearson correlation method that keeps only the genes that have >=.3 rho value with the IC50 score in the training dataset only.
 
-<img src='https://github.com/HorvathLab/mlquiades/blob/51499e2d8204087d11173816ce894c4689125d9c/output_dir/all_tissues/plt_acc_all_cdk4_6_genes.png' width=100% height=100%>
+<img src='https://github.com/HorvathLab/mlquiades/blob/f9d1f5da428cfe0033a8955d290bcc549409dc38/output/all_tissues/plt_accuracy_all_cdk4_6_genes.png' width=100% height=100%>
 
 ## Installation
  
