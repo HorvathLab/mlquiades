@@ -208,13 +208,6 @@ def main():
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
         cancer_genes_filename=cancer_genes_filename)
     print('....... Building and evaluating models .......')
-    dt = decision_tree(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
-    gbdt = gradient_boosted_decision_tree(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
-    nn = neural_net(
-        X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, output_dir,
-        feature_selection, metadata)
     nn_hb = neural_net_with_hyperband(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
         step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
@@ -224,12 +217,12 @@ def main():
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
     ridge = ridge_classifier(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
-    evaluation_df = pd.concat([dt, gbdt, nn, nn_hb, rf, ridge])
-
+    evaluation_df = pd.concat([nn_hb, rf, ridge]) #dt, gbdt, nn
+    
     print('....... Generating evaluation reports .......')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
     plot_combined_acc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)
 
-if __name__=='__main__':
+if __name__=='__main__': 
     main()
