@@ -41,12 +41,14 @@ def evaluate_keras(
     
     return acc, rocauc, fpr, tpr
 
-def counter(y_test, y_pred):
+def counter(y_test, y_pred, nn=False):
     '''
     Count the number of correct 1s and 0s.
     '''
     y_test = y_test.to_numpy()
     y_pred = y_pred.flatten()
+    if nn:
+        y_pred = (y_pred>=.5).astype(int)
     counter = list(compress(y_test, np.equal(y_test,y_pred).tolist()))
     zeros = counter.count(0) + counter.count(-1)
     ones = counter.count(1)
@@ -230,7 +232,8 @@ def neural_net_with_hyperband(
 
     tuner = keras_tuner.RandomSearch(hypermodel=build_model,
                                      objective='val_accuracy', max_trials=max_trials, 
-                                     executions_per_trial=executions_per_trial, overwrite=True, directory=data_dir)
+                                     executions_per_trial=executions_per_trial, overwrite=True,
+                                     directory=data_dir)
     #tuner.search_space_summary()
     
     stop_early = keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -248,32 +251,34 @@ def neural_net_with_hyperband(
         # y_test_tissue = y_test_tissue.replace(-1,0)
         metadata_tissue = metadata_test[metadata_test['Tissue']==tissue]
         if X_test_tissue.shape[0]>0:
-            y_pred = best_model.predict(X_test_tissue)         
+            y_pred = best_model.predict(X_test_tissue)
             if len(y_test_tissue['label'].unique())>1:          
-                acc, rocauc, fpr, tpr = evaluate_keras(best_model, X_test_tissue, y_test_tissue['label'], y_pred)
-                zeros, ones = counter(y_test_tissue['label'], y_pred)
+                acc, rocauc, fpr, tpr = evaluate_keras(best_model, X_test_tissue,
+                                                       y_test_tissue['label'], y_pred)
+                zeros, ones = counter(y_test_tissue['label'], y_pred, nn=True)
                 if plt_confusion:
                     plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='nn_hb_' + tissue, nn=False)
                 if plt_rocauc:
-                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_hb_' + tissue)
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_hb_'
+                                + tissue)
                 evaluation_df.append(['nn_hb', tissue, acc, rocauc, zeros, ones])
             else:
                 loss, acc = best_model.evaluate(X_test_tissue, y_test_tissue)
-                zeros, ones = counter(y_test_tissue['label'], y_pred)
+                zeros, ones = counter(y_test_tissue['label'], y_pred, nn=True)
                 evaluation_df.append(['nn_hb', tissue, acc, 0, zeros, ones])
     
     y_pred = best_model.predict(X_test)
     
     acc, rocauc, fpr, tpr = evaluate_keras(best_model, X_test, y_test['label'], y_pred)
-    zeros, ones = counter(y_test['label'], y_pred)
+    zeros, ones = counter(y_test['label'], y_pred, nn=True)
+    evaluation_df.append(['nn_hb', 'all_tissues', acc, rocauc, zeros, ones])
+    
     if plt_confusion:
         plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                             model_name='nn_hb', nn=True)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='nn_hb')
-    
-    evaluation_df.append(['nn_hb', 'all_tissues', acc, rocauc, zeros, ones])
     
     return pd.DataFrame(evaluation_df)
 
@@ -301,10 +306,12 @@ def random_forest(
                 acc, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 zeros, ones = counter(y_test_tissue['label'], y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir,
+                                          feature_selection,
                                         model_name='rf_' + tissue, nn=False)
                 if plt_rocauc:
-                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='rf_' + tissue)
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='rf_'
+                                + tissue)
                 evaluation_df.append(['rf', tissue, acc, rocauc, zeros, ones])
             else:
                 acc = metrics.accuracy_score(y_test_tissue, y_pred)
@@ -315,13 +322,13 @@ def random_forest(
     
     acc, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     zeros, ones = counter(y_test['label'], y_pred)
+    evaluation_df.append(['rf', 'all_tissues', acc, rocauc, zeros, ones])
+    
     if plt_confusion:
         plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                               model_name='rf', nn=False)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='rf')
-    
-    evaluation_df.append(['rf', 'all_tissues', acc, rocauc, zeros, ones])
     
     return pd.DataFrame(evaluation_df)
 
@@ -348,10 +355,12 @@ def ridge_classifier(
                 acc, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 zeros, ones = counter(y_test_tissue['label'], y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
+                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, 
+                                          feature_selection,
                                         model_name='ridge_' + tissue, nn=False)
                 if plt_rocauc:
-                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge_' + tissue)
+                    plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge_'
+                                + tissue)
                 evaluation_df.append(['ridge', tissue, acc, rocauc, zeros, ones])
             else:
                 acc = metrics.accuracy_score(y_test_tissue, y_pred)
@@ -362,12 +371,12 @@ def ridge_classifier(
     
     acc, rocauc, fpr, tpr = evaluate(y_test, y_pred)
     zeros, ones = counter(y_test['label'], y_pred)
+    evaluation_df.append(['ridge', 'all_tissues', acc, rocauc, zeros, ones])
+    
     if plt_confusion:
         plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
                               model_name='ridge', nn=False)
     if plt_rocauc:
         plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge')
-    
-    evaluation_df.append(['ridge', 'all_tissues', acc, rocauc, zeros, ones])
     
     return pd.DataFrame(evaluation_df)
