@@ -1,11 +1,11 @@
 # MLQUIADES
-*2025/12/02*
+*2025/12/03*
 
 (pronounced *em-el-key-ah-days*)
 
-This package takes in bulk RNA cancer cell line sequencing (processed from raw fastqs to TPM counts using STAR) data and GDSC1 and GDSC2 IC50 drug sensitivity scores for palbociclib to build and evaluate 6 machine learning models.
+This package takes in bulk RNA cancer cell line sequencing (processed from raw fastqs to TPM counts using STAR) data and GDSC1 and GDSC2 IC50 drug sensitivity scores for palbociclib to build and evaluate three machine learning models.
 
-These models include: decision tree, gradient boosted decision tree, neural net (not stable), neural net with hyperband, random forest, and ridge classifier.
+These models include: neural net with hyperband, random forest, and ridge classifier.
 
 There are three options for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes (COSMIC); and a Pearson correlation method that keeps only the genes that have >=.3 rho value with the IC50 score in the training dataset only.
 
