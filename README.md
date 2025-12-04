@@ -42,7 +42,7 @@ python src/mlquiades/main.py --a sample_data --b output --c ccle_tpm_20251103.tx
 ## Output
 
 ```
-── output_dir
+── output
 │   ├── all_tissues
 │   │   ├── evaluation.csv
 │   │   ├── plt_acc_all_cdk4_6_genes.png
