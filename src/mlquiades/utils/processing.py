@@ -1,5 +1,8 @@
+import numpy as np
 import pandas as pd
+import seaborn as sns
 from scipy import stats
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import RandomOverSampler
@@ -50,7 +53,7 @@ def cdk4_6_cancer_genes(
     return df
 
 def split_scale_data(
-        data_dir, df, y_labels, feature_selection, ros=True, 
+        data_dir, output_dir, df, y_labels, feature_selection, ros=True, 
         cdk4_6_genes_filename=None, cancer_genes_filename=None):
     '''
     Performs feature selection (3 options) and splits data into training,
@@ -131,6 +134,36 @@ def split_scale_data(
     X_train_ = scaler.fit_transform(X_train_)
     X_val_ = scaler.transform(X_val_)
     X_test = scaler.transform(X_test)
+    
+    grouped = []
+    for type in ['train', 'val', 'test']:
+        for tissue in metadata['Tissue'].unique():
+            meta_sub = metadata[metadata['Tissue']==tissue]
+            meta_sub = meta_sub[meta_sub['train_val_test']==type]
+            grouped.append([type, tissue, meta_sub['label'].tolist().count(-1),meta_sub['label'].tolist().count(1)])
+    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'sensitive', 'resistant'])
+    grouped.to_csv(output_dir + '/all_tissues/data_split.csv', index=False)
+    grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive', 'resistant'])
+
+    fig,ax = plt.subplots(3,1, figsize=(15,10))
+    p1 = sns.barplot(ax=ax[0], data=grouped[grouped['train_val_test']=='train'], x='tissue', y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p1.set_title('TRAIN')
+    p1.set_xlabel('')
+    p1.set_ylabel('# of cell lines')
+    p1.set_xticklabels(p1.get_xticklabels(), rotation=45)
+    p2 = sns.barplot(ax=ax[1], data=grouped[grouped['train_val_test']=='val'], x='tissue', y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p2.set_title('VAL')
+    p2.set_xlabel('')
+    p2.set_ylabel('# of cell lines')
+    p2.set_xticklabels(p2.get_xticklabels(), rotation=45)
+    p3 = sns.barplot(ax=ax[2], data=grouped[grouped['train_val_test']=='test'], x='tissue', y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p3.set_title('TEST')
+    p3.set_xlabel('tissue type')
+    p3.set_ylabel('# of cell lines')
+    p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
+    plt.tight_layout()
+    plt.savefig(output_dir + '/all_tissues/data_split.png')
+    
     if ros:
         ros = RandomOverSampler(random_state=0)
         X_train_, y_train_ = ros.fit_resample(X_train_, y_train_)

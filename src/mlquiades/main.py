@@ -204,7 +204,7 @@ def main():
         data_dir, ccle_file, drug_file, ic50_cutoff_value, genes_gtf)
     print('....... Splitting and scaling data .......')
     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
-        data_dir=data_dir, df=df, y_labels=y_labels, ros=ros,
+        data_dir=data_dir, output_dir=output_dir, df=df, y_labels=y_labels, ros=ros,
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
         cancer_genes_filename=cancer_genes_filename)
     print('....... Building and evaluating models .......')

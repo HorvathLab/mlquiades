@@ -182,11 +182,11 @@ def plot_rocauc(
 def stitch_pngs(
         feature_selection, output_dir):
     '''
-    Puts all generated pngs into a single md report.
+    Puts resulting pngs into an md and html reports.
     '''
     model_list = ['nn_hb','rf','ridge'] #'dt','gbdt', 'nn',
-    model_list_full = ['Neural Net with Hyperband Tuning', 'Random Forest',
-            'Ridge Classifier'] # 'Decision Tree', 'Gradient-Boosted Decision Tree', 'Neural Net',
+    model_list_full = ['Neural Net with Hyperband Tuning', 'Random Forest', 'Ridge Classifier']
+    # 'Decision Tree', 'Gradient-Boosted Decision Tree', 'Neural Net',
     report_str = ['# Final Report'] #, '', 'legend: 0 = sensitive, 1 = resistant', '']
     # for i in range(0, 3):
     #     model_name = model_list[i]
@@ -198,12 +198,10 @@ def stitch_pngs(
     #     report_str.append('![' + model_name + '_' + 'confusion]' + '(' + output_dir
     #                       + '/all_tissues/confusion/plt_confusion_' + model_name + '_'
     #                       + feature_selection + '.png)')
-
-    report_str.append('![acc all](' + output_dir + 'all_tissues/plt_accuracy_all_'
-                      + feature_selection + '.png)')
-    report_str.append('![acc all](' + output_dir + 'all_tissues/plt_rocauc_all_'
-                      + feature_selection + '.png)')
-        
+    report_str.append('![data split](data_split.png)')
+    report_str.append('![acc all](plt_accuracy_all_' + feature_selection + '.png)')
+    report_str.append('![rocauc all](plt_rocauc_all_' + feature_selection + '.png)')
+    
     with open(output_dir + '/all_tissues/report.md', 'w') as f:
         for item in report_str:
             f.write(item)
