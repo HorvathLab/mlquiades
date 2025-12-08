@@ -189,19 +189,19 @@ python src/mlquiades/main.py --a sample_data --b output --c ccle_tpm_20251103.tx
 ## Usage (thorough)
 
 
-The following commands take in the CCLE, palbociclib, and genes.gtf files to build a dataframe for running through the 6 ML models. It selects features (-r), or genes, that are only related to CDK4 and CDK6. It also sets the IC50 cutoff value for palbociclib to 4 (the reported value on cancergenex.org). This randomly oversamples training data by default. The output directory is set to output_dir.
+The following commands take in cancer cell line TPMs, palbociclib, and genes.gtf files to build a dataframe for running through the 6 ML models. It selects features (-r), or genes, that are only related to CDK4 and CDK6. It also sets the IC50 cutoff value for palbociclib to 4 (the reported value on cancergenex.org). This randomly oversamples training data by default. The output directory is set to output_dir.
 
 ```
 python src/mlquiades/main.py --a sample_data --b output_dir --c ccle_tpm_20251103.txt.gz --d palbociclib_new.csv --e 4 --r cdk4_6_genes --s cdk4_6_genes.txt --u gencode.v19.genes.v7_model.patched_contigs.gtf.gz
 ```
 
-The following commands take in the CCLE, palbociclib, and genes.gtf files to build a dataframe for running through the 6 ML models. It selects features (-r), or genes, that are only related to CDK4, CDK6 and cancer. It also sets the IC50 cutoff value for palbociclib to 4 (the reported value on cancergenex.org). This randomly oversamples training data by default. The output directory is set to output_dir.
+The following commands take in the cancer cell line TPMs, palbociclib, and genes.gtf files to build a dataframe for running through the 6 ML models. It selects features (-r), or genes, that are only related to CDK4, CDK6 and cancer. It also sets the IC50 cutoff value for palbociclib to 4 (the reported value on cancergenex.org). This randomly oversamples training data by default. The output directory is set to output_dir.
 
 ```
 python src/mlquiades/main.py --a sample_data --b output_dir --c ccle_tpm_20251103.txt.gz --d palbociclib_new.csv --e 4 --r cdk_4_6_cancer_genes --s cdk4_6_genes.txt --t cancer_genes.tsv --u gencode.v19.genes.v7_model.patched_contigs.gtf.gz
 ```
 
-The following commands take in the CCLE, palbociclib, and genes.gtf files to build a dataframe for running through the 6 ML models. It selects features (-r), or genes, that have a Pearson correlation rho value of .3 or greater with the y-label values (in the training data only). It also sets the IC50 cutoff value for palbociclib to 4 (the reported value on cancergenex.org). This randomly oversamples training data by default. The output directory is set to output_dir.
+The following commands take in cancer cell line TPMs, palbociclib, and genes.gtf files to build a dataframe for running through the 6 ML models. It selects features (-r), or genes, that have a Pearson correlation rho value of .3 or greater with the y-label values (in the training data only). It also sets the IC50 cutoff value for palbociclib to 4 (the reported value on cancergenex.org). This randomly oversamples training data by default. The output directory is set to output_dir.
 
 ```
 python src/mlquiades/main.py --a sample_data --b output_dir --c ccle_tpm_20251103.txt.gz --d palbociclib_new.csv --e 4 --r pearson --s cdk4_6_genes.txt --u gencode.v19.genes.v7_model.patched_contigs.gtf.gz
