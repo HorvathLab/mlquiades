@@ -28,14 +28,14 @@ def params():
         '--c',
         type=str,
         action='store',
-        dest='ccle_file',
-        help='ccle data file (required)')
+        dest='tpm_filename',
+        help='tpm data filename (required)')
     parser.add_argument(
         '--d',
         type=str,
         action='store',
-        dest='drug_file', 
-        help='drug data file (required)')
+        dest='drug_filename', 
+        help='drug data filename (required)')
     parser.add_argument(
         '--e',
         type=float,
@@ -151,6 +151,20 @@ def params():
         action='store',
         dest='genes_gtf',
         help='filename for genes.gtf file (e.g. gencode.v19.genes.v7_model.patched_contigs.gtf) (required)')
+    parser.add_argument(
+        '--v',
+        type=bool,
+        action='store',
+        dest='isoforms', 
+        default=False,
+        help='use isoform data (optional)')
+    parser.add_argument(
+        '--w',
+        type=str,
+        action='store',
+        dest='isoforms_filename',
+        help='filename for file containing isoforms (not optional if isoforms==True)')
+
     return parser
 
 def main():
@@ -158,8 +172,8 @@ def main():
     args = parser.parse_args()
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
-    ccle_file = args.ccle_file
-    drug_file = args.drug_file
+    tpm_filename = args.tpm_filename
+    drug_filename = args.drug_filename
     ic50_cutoff_value = args.ic50_cutoff_value
     ros = args.ros
     step_size_nodes = args.step_size_nodes
@@ -176,6 +190,8 @@ def main():
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
     genes_gtf = args.genes_gtf
+    isoforms = args.isoforms
+    isoforms_filename = args.isoforms_filename
     
     if feature_selection is None:
         raise TypeError('missing feature selection (option --r)')
@@ -187,6 +203,10 @@ def main():
     if feature_selection == 'cdk4_6_cancer_genes':
         if cancer_genes_filename is None:
             raise TypeError('missing cancer_genes_filename (option --t)')
+    if isoforms:
+        if isoforms_filename is None:
+            raise TypeError('missing isoforms_filename (option --w)')
+            
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
@@ -201,7 +221,7 @@ def main():
     
     print('....... Reading in data .......')
     df, y_labels = read_in_data_new(
-        data_dir, ccle_file, drug_file, ic50_cutoff_value, genes_gtf)
+        data_dir, tpm_filename, drug_filename, genes_gtf, ic50_cutoff_value, isoforms)
     print('....... Splitting and scaling data .......')
     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
         data_dir=data_dir, output_dir=output_dir, df=df, y_labels=y_labels, ros=ros,
@@ -217,7 +237,7 @@ def main():
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
     ridge = ridge_classifier(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
-    evaluation_df = pd.concat([nn_hb, rf, ridge]) #dt, gbdt, nn
+    evaluation_df = pd.concat([nn_hb, rf, ridge])
     
     print('....... Generating evaluation reports .......')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)

@@ -108,12 +108,7 @@ def split_scale_data(
     y_train_ = pd.concat([y_train_sensitive, y_train_resistant])
     y_val_ = pd.concat([y_val_sensitive, y_val_resistant])
     y_test = pd.concat([y_test_sensitive, y_test_resistant])
-    
-    # X_train_, X_valtest, y_train_, y_valtest = train_test_split(df, y_labels,
-    #                                                             test_size=.4)
-    # X_val_, X_test, y_val_, y_test = train_test_split(X_valtest, y_valtest,
-    #                                                   test_size=.5)
-    
+        
     metadata_train = X_train_[['label', 'IC50', 'cell line', 'Tissue']]
     metadata_val = X_val_[['label', 'IC50', 'cell line', 'Tissue']]
     metadata_test = X_test[['label', 'IC50', 'cell line', 'Tissue']]
@@ -146,19 +141,31 @@ def split_scale_data(
     grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive', 'resistant'])
 
     fig,ax = plt.subplots(3,1, figsize=(15,10))
-    p1 = sns.barplot(ax=ax[0], data=grouped[grouped['train_val_test']=='train'], x='tissue', y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p1 = sns.barplot(ax=ax[0], data=grouped[grouped['train_val_test']=='train'], x='tissue', 
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p1.bar_label(p1.containers[0])
+    p1.bar_label(p1.containers[1])
     p1.set_title('TRAIN')
     p1.set_xlabel('')
+    p1.set_ylim(top=60)
     p1.set_ylabel('# of cell lines')
     p1.set_xticklabels(p1.get_xticklabels(), rotation=45)
-    p2 = sns.barplot(ax=ax[1], data=grouped[grouped['train_val_test']=='val'], x='tissue', y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p2 = sns.barplot(ax=ax[1], data=grouped[grouped['train_val_test']=='val'], x='tissue',
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p2.bar_label(p2.containers[0])
+    p2.bar_label(p2.containers[1])
     p2.set_title('VAL')
     p2.set_xlabel('')
+    p2.set_ylim(top=60)
     p2.set_ylabel('# of cell lines')
     p2.set_xticklabels(p2.get_xticklabels(), rotation=45)
-    p3 = sns.barplot(ax=ax[2], data=grouped[grouped['train_val_test']=='test'], x='tissue', y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p3 = sns.barplot(ax=ax[2], data=grouped[grouped['train_val_test']=='test'], x='tissue', 
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p3.bar_label(p3.containers[0])
+    p3.bar_label(p3.containers[1])
     p3.set_title('TEST')
     p3.set_xlabel('tissue type')
+    p3.set_ylim(top=60)
     p3.set_ylabel('# of cell lines')
     p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
     plt.tight_layout()
