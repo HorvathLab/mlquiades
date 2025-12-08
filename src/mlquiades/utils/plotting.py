@@ -184,30 +184,25 @@ def stitch_pngs(
     '''
     Puts resulting pngs into an md and html reports.
     '''
-    model_list = ['nn_hb','rf','ridge'] #'dt','gbdt', 'nn',
-    model_list_full = ['Neural Net with Hyperband Tuning', 'Random Forest', 'Ridge Classifier']
-    # 'Decision Tree', 'Gradient-Boosted Decision Tree', 'Neural Net',
-    report_str = ['# Final Report'] #, '', 'legend: 0 = sensitive, 1 = resistant', '']
-    # for i in range(0, 3):
-    #     model_name = model_list[i]
-    #     report_str.append('')
-    #     report_str.append('## ' + model_list_full[i])
-    #     report_str.append('![' + model_name + '_' + 'rocauc]' + '(' + output_dir
-    #                       + / plt_rocauc_' 
-    #                       + model_name + '_' + feature_selection + '.png)')
-    #     report_str.append('![' + model_name + '_' + 'confusion]' + '(' + output_dir
-    #                       + '/all_tissues/confusion/plt_confusion_' + model_name + '_'
-    #                       + feature_selection + '.png)')
-    report_str.append('![data split](data_split.png)')
-    report_str.append('![acc all](plt_accuracy_all_' + feature_selection + '.png)')
-    report_str.append('![rocauc all](plt_rocauc_all_' + feature_selection + '.png)')
+    model_list = ['nn_hb','rf','ridge']
+    model_list_full = ['Neural Net with Hyperband Tuning', 'Random Forest',
+                       'Ridge Classifier']
+    report_str = ['# Report', '', '## Data Distribution', '']
+    report_str.append('![data split](all_tissues/data_split.png)')
+    report_str.extend(['', '## Evaluation - Accuracy', ''])
+    report_str.append('![acc all](all_tissues/plt_accuracy_all_' + feature_selection \
+        + '.png)')
+    report_str.extend(['', '## Evaluation - ROCAUC', '### (for tissues that contain both \
+                       classes in the testing dataset)', ''])
+    report_str.append('![rocauc all](all_tissues/plt_rocauc_all_' + feature_selection \
+        + '.png)')
     
-    with open(output_dir + '/all_tissues/report.md', 'w') as f:
+    with open(output_dir + '/report.md', 'w') as f:
         for item in report_str:
             f.write(item)
             f.write('\n')
-    with open(output_dir + '/all_tissues/report.md', 'r') as f:
+    with open(output_dir + '/report.md', 'r') as f:
         md = f.read()
     html = markdown.markdown(md)
-    with open(output_dir + '/all_tissues/report.html', 'w') as f:
+    with open(output_dir + '/report.html', 'w') as f:
         f.write(html)
