@@ -28,20 +28,8 @@ def params():
         '--c',
         type=str,
         action='store',
-        dest='tpm_filename',
-        help='tpm data filename (required)')
-    parser.add_argument(
-        '--d',
-        type=str,
-        action='store',
-        dest='drug_filename', 
-        help='drug data filename (required)')
-    parser.add_argument(
-        '--e',
-        type=float,
-        action='store',
-        dest='ic50_cutoff_value',
-        help='ic50 cutoff value (required)')
+        dest='data_filename',
+        help='data filename (required)')
     parser.add_argument(
         '--f',
         type=bool,
@@ -145,25 +133,6 @@ def params():
         action='store',
         dest='cancer_genes_filename',
         help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes (optional unless cdk4_6_cancer_genes selected for -r)')
-    parser.add_argument(
-        '--u',
-        type=str,
-        action='store',
-        dest='genes_gtf',
-        help='filename for genes.gtf file (e.g. gencode.v19.genes.v7_model.patched_contigs.gtf) (required)')
-    parser.add_argument(
-        '--v',
-        type=bool,
-        action='store',
-        dest='isoforms', 
-        default=False,
-        help='use isoform data (optional)')
-    parser.add_argument(
-        '--w',
-        type=str,
-        action='store',
-        dest='isoforms_filename',
-        help='filename for file containing isoforms (not optional if isoforms==True)')
 
     return parser
 
@@ -172,9 +141,7 @@ def main():
     args = parser.parse_args()
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
-    tpm_filename = args.tpm_filename
-    drug_filename = args.drug_filename
-    ic50_cutoff_value = args.ic50_cutoff_value
+    data_filename = args.data_filename
     ros = args.ros
     step_size_nodes = args.step_size_nodes
     min_nodes = args.min_nodes
@@ -190,8 +157,6 @@ def main():
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
     genes_gtf = args.genes_gtf
-    isoforms = args.isoforms
-    isoforms_filename = args.isoforms_filename
     
     if feature_selection is None:
         raise TypeError('missing feature selection (option --r)')
@@ -202,11 +167,7 @@ def main():
             raise TypeError('missing cdk4_6_genes_filename (option --s)')
     if feature_selection == 'cdk4_6_cancer_genes':
         if cancer_genes_filename is None:
-            raise TypeError('missing cancer_genes_filename (option --t)')
-    if isoforms:
-        if isoforms_filename is None:
-            raise TypeError('missing isoforms_filename (option --w)')
-            
+            raise TypeError('missing cancer_genes_filename (option --t)')           
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
@@ -220,11 +181,10 @@ def main():
         os.mkdir(output_dir + '/by_tissue/rocauc')
     
     print('....... Reading in data .......')
-    df, y_labels = read_in_data_new(
-        data_dir, tpm_filename, drug_filename, genes_gtf, ic50_cutoff_value, isoforms)
+    df = pd.read_csv(data_dir + data_filename)
     print('....... Splitting and scaling data .......')
     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
-        data_dir=data_dir, output_dir=output_dir, df=df, y_labels=y_labels, ros=ros,
+        data_dir=data_dir, output_dir=output_dir, df=df, y_labels=df['label'], ros=ros,
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
         cancer_genes_filename=cancer_genes_filename)
     print('....... Building and evaluating models .......')

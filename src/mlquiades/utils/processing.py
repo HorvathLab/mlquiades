@@ -33,7 +33,9 @@ def cdk4_6_genes(
     features that are in that list.
     '''
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
-    df = df.loc[:, df.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
+    x = pd.DataFrame([x.split('_')[0] for x in df.columns])
+    x = df.columns[x.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)[0]]
+    df = df.loc[:, x]
     
     return df, genes
 
@@ -48,9 +50,54 @@ def cdk4_6_cancer_genes(
     df_, genes = cdk4_6_genes(data_dir, df, cdk4_6_genes_filename)
     df_genes = pd.DataFrame(genes + cancer_genes.tolist())
     genes = df_genes.iloc[:,0].unique().tolist()
-    df = df.loc[:, df.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
+    x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
+    x = df.columns[x.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)[0]]
+    df_ = df_.loc[:, x]
     
     return df
+
+def plot_split(df, output_dir):
+    '''
+    Plot the split for training, validation and testing data with respect to the
+    number of sensitive and resistant cancer cell lines in each tissue type.
+    '''
+    
+    fig,ax = plt.subplots(3,1, figsize=(15,10))
+    
+    p1 = sns.barplot(ax=ax[0], data=df[df['train_val_test']=='train'], x='tissue', 
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p1.bar_label(p1.containers[0])
+    p1.bar_label(p1.containers[1])
+    p1.set_title('TRAIN')
+    p1.set_xlabel('')
+    p1.set_ylim(top=df['value'].max()+5)
+    p1.set_ylabel('# of cell lines')
+    p1.set_xticklabels(p1.get_xticklabels(), rotation=45)
+    
+    p2 = sns.barplot(ax=ax[1], data=df[df['train_val_test']=='val'], x='tissue',
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p2.bar_label(p2.containers[0])
+    p2.bar_label(p2.containers[1])
+    p2.set_title('VAL')
+    p2.set_xlabel('')
+    p2.set_ylim(top=df['value'].max()+5)
+    p2.set_ylabel('# of cell lines')
+    p2.set_xticklabels(p2.get_xticklabels(), rotation=45)
+    
+    p3 = sns.barplot(ax=ax[2], data=df[df['train_val_test']=='test'], x='tissue',
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p3.bar_label(p3.containers[0])
+    p3.bar_label(p3.containers[1])
+    p3.set_title('TEST')
+    p3.set_xlabel('tissue type')
+    p3.set_ylim(top=df['value'].max()+5)
+    p3.set_ylabel('# of cell lines')
+    p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
+    
+    plt.tight_layout()
+    plt.savefig(output_dir + '/all_tissues/data_split.png')
+    
+    return
 
 def split_scale_data(
         data_dir, output_dir, df, y_labels, feature_selection, ros=True, 
@@ -139,37 +186,9 @@ def split_scale_data(
     grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'sensitive', 'resistant'])
     grouped.to_csv(output_dir + '/all_tissues/data_split.csv', index=False)
     grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive', 'resistant'])
-
-    fig,ax = plt.subplots(3,1, figsize=(15,10))
-    p1 = sns.barplot(ax=ax[0], data=grouped[grouped['train_val_test']=='train'], x='tissue', 
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p1.bar_label(p1.containers[0])
-    p1.bar_label(p1.containers[1])
-    p1.set_title('TRAIN')
-    p1.set_xlabel('')
-    p1.set_ylim(top=60)
-    p1.set_ylabel('# of cell lines')
-    p1.set_xticklabels(p1.get_xticklabels(), rotation=45)
-    p2 = sns.barplot(ax=ax[1], data=grouped[grouped['train_val_test']=='val'], x='tissue',
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p2.bar_label(p2.containers[0])
-    p2.bar_label(p2.containers[1])
-    p2.set_title('VAL')
-    p2.set_xlabel('')
-    p2.set_ylim(top=60)
-    p2.set_ylabel('# of cell lines')
-    p2.set_xticklabels(p2.get_xticklabels(), rotation=45)
-    p3 = sns.barplot(ax=ax[2], data=grouped[grouped['train_val_test']=='test'], x='tissue', 
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p3.bar_label(p3.containers[0])
-    p3.bar_label(p3.containers[1])
-    p3.set_title('TEST')
-    p3.set_xlabel('tissue type')
-    p3.set_ylim(top=60)
-    p3.set_ylabel('# of cell lines')
-    p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
-    plt.tight_layout()
-    plt.savefig(output_dir + '/all_tissues/data_split.png')
+    grouped = grouped.sort('tissue', ascending=False)
+    
+    plot_split(grouped, output_dir)
     
     if ros:
         ros = RandomOverSampler(random_state=0)
