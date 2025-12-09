@@ -1,4 +1,4 @@
-# MLQUIADES
+# mlquiades
 *2025/12/09*
 
 (pronounced *em-el-key-ah-days*)
