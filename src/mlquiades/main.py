@@ -31,6 +31,20 @@ def params():
         dest='data_filename',
         help='data filename (required)')
     parser.add_argument(
+        '--d',
+        type=bool,
+        action='store',
+        dest='confusion', 
+        default=False,
+        help='plot confusion matrices per tissue type')
+    parser.add_argument(
+        '--e',
+        type=bool,
+        action='store',
+        dest='rocauc', 
+        default=False,
+        help='plot rocauc per tissue type')
+    parser.add_argument(
         '--f',
         type=bool,
         action='store',
@@ -142,6 +156,8 @@ def main():
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
     data_filename = args.data_filename
+    confusion = args.confusion
+    rocauc = args.rocauc
     ros = args.ros
     step_size_nodes = args.step_size_nodes
     min_nodes = args.min_nodes
@@ -156,12 +172,9 @@ def main():
     feature_selection = args.feature_selection
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
-    genes_gtf = args.genes_gtf
     
     if feature_selection is None:
         raise TypeError('missing feature selection (option --r)')
-    if genes_gtf is None:
-        raise TypeError('missing genes.gtf (option --u)')
     if feature_selection == 'cdk4_6_genes':
         if cdk4_6_filename is None:
             raise TypeError('missing cdk4_6_genes_filename (option --s)')
@@ -192,11 +205,12 @@ def main():
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
         step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
         patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-        feature_selection, metadata)
+        feature_selection, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
     rf = random_forest(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
     ridge = ridge_classifier(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
+        plt_confusion=confusion, plt_rocauc=rocauc)
     evaluation_df = pd.concat([nn_hb, rf, ridge])
     
     print('....... Generating evaluation reports .......')

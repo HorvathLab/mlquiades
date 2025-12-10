@@ -182,11 +182,26 @@ def split_scale_data(
         for tissue in metadata['Tissue'].unique():
             meta_sub = metadata[metadata['Tissue']==tissue]
             meta_sub = meta_sub[meta_sub['train_val_test']==type]
-            grouped.append([type, tissue, meta_sub['label'].tolist().count(-1),meta_sub['label'].tolist().count(1)])
-    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'sensitive', 'resistant'])
+            grouped.append([type, tissue, meta_sub['label'].tolist().count(-1),
+                            meta_sub['label'].tolist().count(1)])
+
+    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'sensitive', 
+                                             'resistant'])
     grouped.to_csv(output_dir + '/all_tissues/data_split.csv', index=False)
-    grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive', 'resistant'])
-    grouped = grouped.sort('tissue', ascending=False)
+    grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive',
+                                                                             'resistant'])
+    grouped = grouped.sort_values(by='tissue', ascending=True)
+    
+    all_tissues_df = []
+    for type in ['train', 'val', 'test']:
+        meta_sub = metadata[metadata['train_val_test']==type]
+        all_tissues_df.append([type, 'all_tissues', meta_sub['label'].tolist().count(-1),
+                            meta_sub['label'].tolist().count(1)])
+    all_tissues_df = pd.DataFrame(all_tissues_df, columns=['train_val_test', 'tissue',
+                                                               'sensitive', 'resistant'])
+    all_tissues_df = all_tissues_df.melt(id_vars=['train_val_test', 'tissue'], 
+                                         value_vars=['sensitive', 'resistant'])
+    grouped = pd.concat([all_tissues_df, grouped])
     
     plot_split(grouped, output_dir)
     
