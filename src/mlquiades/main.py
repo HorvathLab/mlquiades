@@ -28,20 +28,22 @@ def params():
         '--c',
         type=str,
         action='store',
-        dest='ccle_file',
-        help='ccle data file (required)')
+        dest='data_filename',
+        help='data filename (required)')
     parser.add_argument(
         '--d',
-        type=str,
+        type=bool,
         action='store',
-        dest='drug_file', 
-        help='drug data file (required)')
+        dest='confusion', 
+        default=False,
+        help='plot confusion matrices per tissue type')
     parser.add_argument(
         '--e',
-        type=float,
+        type=bool,
         action='store',
-        dest='ic50_cutoff_value',
-        help='ic50 cutoff value (required)')
+        dest='rocauc', 
+        default=False,
+        help='plot rocauc per tissue type')
     parser.add_argument(
         '--f',
         type=bool,
@@ -145,12 +147,7 @@ def params():
         action='store',
         dest='cancer_genes_filename',
         help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes (optional unless cdk4_6_cancer_genes selected for -r)')
-    parser.add_argument(
-        '--u',
-        type=str,
-        action='store',
-        dest='genes_gtf',
-        help='filename for genes.gtf file (e.g. gencode.v19.genes.v7_model.patched_contigs.gtf) (required)')
+
     return parser
 
 def main():
@@ -158,9 +155,9 @@ def main():
     args = parser.parse_args()
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
-    ccle_file = args.ccle_file
-    drug_file = args.drug_file
-    ic50_cutoff_value = args.ic50_cutoff_value
+    data_filename = args.data_filename
+    confusion = args.confusion
+    rocauc = args.rocauc
     ros = args.ros
     step_size_nodes = args.step_size_nodes
     min_nodes = args.min_nodes
@@ -175,60 +172,51 @@ def main():
     feature_selection = args.feature_selection
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
-    genes_gtf = args.genes_gtf
     
     if feature_selection is None:
         raise TypeError('missing feature selection (option --r)')
-    if genes_gtf is None:
-        raise TypeError('missing genes.gtf (option --u)')
     if feature_selection == 'cdk4_6_genes':
         if cdk4_6_filename is None:
             raise TypeError('missing cdk4_6_genes_filename (option --s)')
     if feature_selection == 'cdk4_6_cancer_genes':
         if cancer_genes_filename is None:
-            raise TypeError('missing cancer_genes_filename (option --t)')
+            raise TypeError('missing cancer_genes_filename (option --t)')           
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
+    if not os.path.isdir(output_dir + '/all_tissues/'):
+        os.mkdir(output_dir + '/all_tissues')
+    if not os.path.isdir(output_dir + '/by_tissue/'):
+        os.mkdir(output_dir + '/by_tissue')
+    if not os.path.isdir(output_dir + '/by_tissue/confusion'):
+        os.mkdir(output_dir + '/by_tissue/confusion')
+    if not os.path.isdir(output_dir + '/by_tissue/rocauc'):
+        os.mkdir(output_dir + '/by_tissue/rocauc')
     
     print('....... Reading in data .......')
-    df, y_labels = read_in_data(
-        data_dir, ccle_file, drug_file, ic50_cutoff_value, genes_gtf)
-    
-    print('....... Spliting and scaling data .......')
-    X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test = split_scale_data(
-        data_dir=data_dir, df=df, y_labels=y_labels, ros=ros,
+    df = pd.read_csv(data_dir + data_filename)
+    print('....... Splitting and scaling data .......')
+    X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
+        data_dir=data_dir, output_dir=output_dir, df=df, y_labels=df['label'], ros=ros,
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
         cancer_genes_filename=cancer_genes_filename)
-    
     print('....... Building and evaluating models .......')
-    evaluation_df = []
-    evaluation_df.append(
-        decision_tree(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
-    evaluation_df.append(
-        gradient_boosted_decision_tree(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
-    evaluation_df.append(
-        neural_net(
-            X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, output_dir,
-            feature_selection))
-    evaluation_df.append(
-        neural_net_with_hyperband(
-            X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
-            step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-            patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-            feature_selection))
-    evaluation_df.append(
-        random_forest(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
-    evaluation_df.append(
-        ridge_classifier(
-            X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection))
+    nn_hb = neural_net_with_hyperband(
+        X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
+        step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
+        patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
+        feature_selection, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
+    rf = random_forest(
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
+    ridge = ridge_classifier(
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
+        plt_confusion=confusion, plt_rocauc=rocauc)
+    evaluation_df = pd.concat([nn_hb, rf, ridge])
     
     print('....... Generating evaluation reports .......')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
+    plot_combined_acc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)
 
-if __name__=='__main__':
+if __name__=='__main__': 
     main()
