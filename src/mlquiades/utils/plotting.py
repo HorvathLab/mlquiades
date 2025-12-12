@@ -47,7 +47,7 @@ def plot_combined_acc(
     evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
     evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
     evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
-    evaluation_df.to_csv(output_dir + '/all_tissues/evaluation.csv', index=False)
+    # evaluation_df.to_csv(output_dir + '/all_tissues/evaluation.csv', index=False)    
     df__ = evaluation_df
     df__['n_0_plus_n_1'] = (df__['n_0'] + df__['n_1'])
 
@@ -68,84 +68,25 @@ def plot_combined_acc(
     tissues = df__['tissue'].unique()
 
     fig, ax = plt.subplots(1,1, sharex='col', sharey='row',figsize=(1.5*16, 4), tight_layout=True)
-    models = (
-        'nn',
-        'rf\n' + tissues[0],
-        'ridge',
-        'nn\n',
-        'rf\n ' + tissues[1],
-        'ridge\n',
-        'nn\n ',
-        'rf\n' + tissues[2],
-        'ridge\n  ',
-        'nn\n  ',
-        'rf\n' + tissues[3],
-        'ridge\n   ',
-        'nn\n    ',
-        'rf\n' + tissues[4],
-        'ridge\n    ',
-        'nn\n     ',
-        'rf\n' + tissues[5],
-        'ridge\n     ',
-        'nn\n      ',
-        'rf\n' + tissues[6],
-        'ridge\n      ',
-        'nn\n       ',
-        'rf\n' + tissues[7],
-        'ridge\n       ',
-        'nn\n        ',
-        'rf\n' + tissues[8],
-        'ridge\n        ',
-        'nn\n         ',
-        'rf\n' + tissues[9],
-        'ridge\n         ',
-        'nn\n          ',
-        'rf\n' + tissues[10],
-        'ridge\n          ',
-        'nn\n           ',
-        'rf\n' + tissues[11],
-        'ridge\n           ',
-        'nn\n            ',
-        'rf\n' + tissues[12],
-        'ridge\n            ',
-        'nn\n             ',
-        'rf\n' + tissues[13],
-        'ridge\n             ',
-        'nn\n              ',
-        'rf\n' + tissues[14],
-        'ridge\n              ',
-        'nn\n               ',
-        'rf\n' + tissues[15],
-        'ridge\n               ',
-        'nn\n                ',
-        'rf\n' + tissues[16],
-        'ridge\n                ',
-        'nn\n                 ',
-        'rf\n' + tissues[17],
-        'ridge\n                 ',
-        'nn\n                  ',
-        'rf\n' + tissues[18],
-        'ridge\n                  ',
-        'nn\n                   ',
-        'rf\n' + tissues[19],
-        'ridge\n                   ',
-        'nn\n                    ',
-        'rf\n' + tissues[20],
-        'ridge\n                    ',
-        'nn\n                     ',
-        'rf\n' + tissues[21],
-        'ridge\n                     ',
-        'nn\n                      ',
-        'rf\n' + tissues[22],
-        'ridge\n                      '
-    )
+
+    spacer = ''
+    models = list()
+
+    for i in np.arange(len(tissues)):
+        models.extend(
+            ['nn\n' + spacer,
+            'rf\n' + tissues[i],
+            'ridge\n' + spacer]
+        )
+        spacer = spacer + ' '
+
     weight_counts = {
         'sensitive': df__[['acc_class0']].to_numpy().flatten(),
         'resistant': df__[['acc_class1']].to_numpy().flatten(),
     }
     count = 0
     width = 0.5
-    bottom = np.zeros(69)
+    bottom = np.zeros(len(tissues)*3)
 
     for boolean, weight_count in weight_counts.items():
         p = ax.bar(models, weight_count, width, label=boolean, bottom=bottom)
@@ -156,7 +97,7 @@ def plot_combined_acc(
 
     ax.legend(loc="upper right")
     plt.ylabel('accuracy')
-    for i in np.arange(22):
+    for i in np.arange(len(tissues)):
         plt.vlines(2.5+(3*i), 0, 1, colors='black', linestyles='dotted')
     
     plt.savefig(output_dir + '/all_tissues/plt_accuracy_all_' + feature_selection + '.png')
