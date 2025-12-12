@@ -119,13 +119,18 @@ def split_scale_data(
                                  cdk4_6_genes_filename=cdk4_6_genes_filename,
                                  cancer_genes_filename=cancer_genes_filename)
 
-    # isolate the data that pertains to sensitive
+    # isolate the data that pertains to the sensitive class
     df_sensitive = df[df['label']==-1]
+    breast_sensitive = df_sensitive[df_sensitive['Tissue']=='breast']
+    df_sensitive = df_sensitive[df_sensitive['Tissue']!='breast']
+    
     X_train_sensitive, X_valtest_sensitive, y_train_sensitive, y_valtest_sensitive = train_test_split(
         df_sensitive, df_sensitive['label'], test_size=.4)
     X_val_sensitive, X_test_sensitive, y_val_sensitive, y_test_sensitive = train_test_split(
         X_valtest_sensitive, y_valtest_sensitive, test_size=.5)
     
+    
+    # isolate the data that pertains to the resistant class
     X_train_resistant = pd.DataFrame()
     X_val_resistant = pd.DataFrame()
     X_test_resistant = pd.DataFrame()
@@ -133,6 +138,32 @@ def split_scale_data(
     y_val_resistant = pd.DataFrame()
     y_test_resistant = pd.DataFrame()
     df_resistant = df[df['label']==1]
+    breast_resistant = df_resistant[df_resistant['Tissue']=='breast']
+    df_resistant = df_resistant[df_resistant['Tissue']!='breast']
+    
+    # breast cancer samples - split so that you have both classes in train, val and test (if possible)
+    X_train_sensitive_b = pd.DataFrame()
+    X_val_sensitive_b = pd.DataFrame()
+    X_test_sensitive_b = pd.DataFrame()
+    y_train_sensitive_b = pd.DataFrame()
+    y_val_sensitive_b = pd.DataFrame()
+    y_test_sensitive_b = pd.DataFrame()
+    X_train_resistant_b = pd.DataFrame()
+    X_val_resistant_b = pd.DataFrame()
+    X_test_resistant_b = pd.DataFrame()
+    y_train_resistant_b = pd.DataFrame()
+    y_val_resistant_b = pd.DataFrame()
+    y_test_resistant_b = pd.DataFrame()
+    if len(breast_sensitive)>0:
+        X_train_sensitive_b, X_valtest_sensitive_b, y_train_sensitive_b, y_valtest_sensitive_b = train_test_split(
+            breast_sensitive, breast_sensitive['label'], test_size=.4)
+        X_val_sensitive_b, X_test_sensitive_b, y_val_sensitive_b, y_test_sensitive_b = train_test_split(
+            X_valtest_sensitive_b, y_valtest_sensitive_b, test_size=.5)
+    if len(breast_resistant)>0:
+        X_train_resistant_b, X_valtest_resistant_b, y_train_resistant_b, y_valtest_resistant_b = train_test_split(
+            breast_resistant, breast_resistant['label'], test_size=.4)
+        X_val_resistant_b, X_test_resistant_b, y_val_resistant_b, y_test_resistant_b = train_test_split(
+            X_valtest_resistant_b, y_valtest_resistant_b, test_size=.5)
     
     for tissue in df_resistant['Tissue'].unique():
         df_resistant_tissue = df_resistant[df_resistant['Tissue']==tissue]
@@ -149,13 +180,13 @@ def split_scale_data(
             y_val_resistant = pd.concat([y_val_resistant, y_val_tissue])
             y_test_resistant = pd.concat([y_test_resistant, y_test_tissue])
     
-    X_train_ = pd.concat([X_train_sensitive, X_train_resistant])    
-    X_val_ = pd.concat([X_val_sensitive, X_val_resistant])
-    X_test = pd.concat([X_test_sensitive, X_test_resistant])
-    y_train_ = pd.concat([y_train_sensitive, y_train_resistant])
-    y_val_ = pd.concat([y_val_sensitive, y_val_resistant])
-    y_test = pd.concat([y_test_sensitive, y_test_resistant])
-        
+    X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b])
+    X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b])
+    X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b])
+    y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b])
+    y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b])
+    y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b])
+    
     metadata_train = X_train_[['label', 'cell line', 'Tissue']]
     metadata_val = X_val_[['label', 'cell line', 'Tissue']]
     metadata_test = X_test[['label', 'cell line', 'Tissue']]
