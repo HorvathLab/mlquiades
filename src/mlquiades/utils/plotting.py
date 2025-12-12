@@ -31,6 +31,7 @@ def plot_combined_rocauc(
     bp.set(xlabel=' ', ylabel=' ', title='ROCAUC Evaluation Using ' + feature_selection + 
            ' Features')
     bp.set_xticklabels(bp.get_xticklabels(), rotation=90)
+    bp.set_ylim(top=1)
     fig = bp.get_figure()
     plt.tight_layout()
     fig.savefig(output_dir + '/all_tissues/plt_rocauc_all_' + feature_selection + '.png')
@@ -42,11 +43,11 @@ def plot_combined_acc(
     '''
     evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_0', 'n_1']
     evaluation_df = pd.DataFrame(evaluation_df.sort_values(by=['tissue', 'model'],
-                                                           ascending=[True, True]))
+                                                            ascending=[True, True]))
     evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
     evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
     evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
-    evaluation_df.to_csv(output_dir + '/all_tissues/evaluation.csv', index=False)    
+    evaluation_df.to_csv(output_dir + '/all_tissues/evaluation.csv', index=False)
     df__ = evaluation_df
     df__['n_0_plus_n_1'] = (df__['n_0'] + df__['n_1'])
 
@@ -63,9 +64,9 @@ def plot_combined_acc(
     df__.loc[df__['n_0_plus_n_1']==0, 'n_1'] = 0
 
     df__ = df__.drop(columns=['acc', 'n_0_plus_n_1', 'rocauc'])
-    
+
     tissues = df__['tissue'].unique()
-    
+
     fig, ax = plt.subplots(1,1, sharex='col', sharey='row',figsize=(1.5*16, 4), tight_layout=True)
     models = (
         'nn',
@@ -121,7 +122,22 @@ def plot_combined_acc(
         'ridge\n                ',
         'nn\n                 ',
         'rf\n' + tissues[17],
-        'ridge\n                 '
+        'ridge\n                 ',
+        'nn\n                  ',
+        'rf\n' + tissues[18],
+        'ridge\n                  ',
+        'nn\n                   ',
+        'rf\n' + tissues[19],
+        'ridge\n                   ',
+        'nn\n                    ',
+        'rf\n' + tissues[20],
+        'ridge\n                    ',
+        'nn\n                     ',
+        'rf\n' + tissues[21],
+        'ridge\n                     ',
+        'nn\n                      ',
+        'rf\n' + tissues[22],
+        'ridge\n                      '
     )
     weight_counts = {
         'sensitive': df__[['acc_class0']].to_numpy().flatten(),
@@ -129,20 +145,20 @@ def plot_combined_acc(
     }
     count = 0
     width = 0.5
-    bottom = np.zeros(54)
+    bottom = np.zeros(69)
 
     for boolean, weight_count in weight_counts.items():
         p = ax.bar(models, weight_count, width, label=boolean, bottom=bottom)
         bottom += weight_count
         ax.bar_label(p, labels=df__['n_' + str(count)].to_numpy().flatten(),
-                     label_type='center')
+                        label_type='center')
         count += 1
 
     ax.legend(loc="upper right")
     plt.ylabel('accuracy')
-    for i in np.arange(17):
+    for i in np.arange(22):
         plt.vlines(2.5+(3*i), 0, 1, colors='black', linestyles='dotted')
-
+    
     plt.savefig(output_dir + '/all_tissues/plt_accuracy_all_' + feature_selection + '.png')
 
 def plot_confusion_matrix(

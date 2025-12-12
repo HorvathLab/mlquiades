@@ -20,9 +20,9 @@ def pearson(
     f.columns = ['rho','pvalue']
     f = pd.DataFrame(f).sort_values(by='rho', ascending=False)
     genes = f.index[f.rho>=.3]
-    X_train_ = X_train_.loc[:, X_train_.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
-    X_val_ = X_val_.loc[:, X_val_.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
-    X_test = X_test.loc[:, X_test.columns.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)]
+    X_train_ = X_train_.loc[:, X_train_.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
+    X_val_ = X_val_.loc[:, X_val_.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
+    X_test = X_test.loc[:, X_test.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
 
     return X_train_, y_train_, X_val_, X_test
 
@@ -34,7 +34,7 @@ def cdk4_6_genes(
     '''
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
     x = pd.DataFrame([x.split('_')[0] for x in df.columns])
-    x = df.columns[x.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)[0]]
+    x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df = df.loc[:, x]
     
     return df, genes
@@ -51,7 +51,7 @@ def cdk4_6_cancer_genes(
     df_genes = pd.DataFrame(genes + cancer_genes.tolist())
     genes = df_genes.iloc[:,0].unique().tolist()
     x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
-    x = df.columns[x.isin(['label', 'IC50', 'cell line', 'Tissue'] + genes)[0]]
+    x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df_ = df_.loc[:, x]
     
     return df
@@ -156,15 +156,15 @@ def split_scale_data(
     y_val_ = pd.concat([y_val_sensitive, y_val_resistant])
     y_test = pd.concat([y_test_sensitive, y_test_resistant])
         
-    metadata_train = X_train_[['label', 'IC50', 'cell line', 'Tissue']]
-    metadata_val = X_val_[['label', 'IC50', 'cell line', 'Tissue']]
-    metadata_test = X_test[['label', 'IC50', 'cell line', 'Tissue']]
+    metadata_train = X_train_[['label', 'cell line', 'Tissue']]
+    metadata_val = X_val_[['label', 'cell line', 'Tissue']]
+    metadata_test = X_test[['label', 'cell line', 'Tissue']]
     metadata_train['train_val_test'] = 'train'
     metadata_val['train_val_test'] = 'val'
     metadata_test['train_val_test'] = 'test'
-    X_train_ = X_train_.drop(columns=['label', 'IC50', 'cell line', 'Tissue'])
-    X_val_ = X_val_.drop(columns=['label', 'IC50', 'cell line', 'Tissue'])
-    X_test = X_test.drop(columns=['label', 'IC50', 'cell line', 'Tissue'])
+    X_train_ = X_train_.drop(columns=['label', 'cell line', 'Tissue'])
+    X_val_ = X_val_.drop(columns=['label', 'cell line', 'Tissue'])
+    X_test = X_test.drop(columns=['label', 'cell line', 'Tissue'])
     
     metadata = pd.concat([metadata_train, metadata_val, metadata_test])
     

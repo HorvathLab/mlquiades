@@ -6,9 +6,8 @@ from .plotting import *
 from keras import layers
 from itertools import compress
 from sklearn import metrics, tree
-from tensorflow.keras.models import Sequential
 from sklearn.linear_model import RidgeClassifier
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.metrics import ConfusionMatrixDisplay, auc, roc_curve, roc_auc_score
 
