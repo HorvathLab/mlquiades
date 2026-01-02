@@ -6,6 +6,51 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from sklearn.metrics import ConfusionMatrixDisplay
 
+
+def plot_split(df, feature_selection, output_dir):
+    '''
+    Plot the split for training, validation and testing data with respect to the
+    number of sensitive and resistant cancer cell lines in each tissue type.
+    '''
+    
+    fig,ax = plt.subplots(3,1, figsize=(15,10))
+    
+    p1 = sns.barplot(ax=ax[0], data=df[df['train_val_test']=='train'], x='tissue', 
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p1.bar_label(p1.containers[0])
+    p1.bar_label(p1.containers[1])
+    p1.set_title('TRAIN')
+    p1.set_xlabel('')
+    p1.set_ylim(top=df['value'].max()+5)
+    p1.set_ylabel('# of cell lines')
+    p1.set_xticklabels(p1.get_xticklabels(), rotation=45)
+    
+    p2 = sns.barplot(ax=ax[1], data=df[df['train_val_test']=='val'], x='tissue',
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p2.bar_label(p2.containers[0])
+    p2.bar_label(p2.containers[1])
+    p2.set_title('VAL')
+    p2.set_xlabel('')
+    p2.set_ylim(top=df['value'].max()+20)
+    p2.set_ylabel('# of cell lines')
+    p2.set_xticklabels(p2.get_xticklabels(), rotation=45)
+    
+    p3 = sns.barplot(ax=ax[2], data=df[df['train_val_test']=='test'], x='tissue',
+                     y='value', hue='variable', palette=sns.color_palette('icefire'))
+    p3.bar_label(p3.containers[0])
+    p3.bar_label(p3.containers[1])
+    p3.set_title('TEST')
+    p3.set_xlabel('tissue type')
+    p3.set_ylim(top=df['value'].max()+5)
+    p3.set_ylabel('# of cell lines')
+    p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
+    
+    plt.tight_layout()
+    plt.savefig(output_dir + '/all_tissues/data_split.png')
+    plt.close()
+    
+    return
+
 def plot_combined_rocauc(
         evaluation_df, feature_selection, output_dir):
     '''
@@ -18,23 +63,16 @@ def plot_combined_rocauc(
     evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
     evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
     evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
-    
     df__ = evaluation_df.drop(columns=['acc']).melt(id_vars=['model','tissue'])
-    df__['value'] = np.array(df__['value'],dtype='float')
+    df__['value'] = np.array(df__['value'], dtype='float')
     df__ = pd.DataFrame({'model': df__['model'], 'variable': df__['variable'],
                          'value': df__['value'], 'tissue': df__['tissue']})
-
-    bp = sns.barplot(df__, x='tissue', y='value', hue='model')
-    handles, _ = bp.get_legend_handles_labels()
-    plt.legend(handles[0:6], ['dt', 'gbdt', 'nn', 'nn_hb', 'rf', 'ridge'], loc="lower left", 
-               bbox_to_anchor=(1.01, 0.29), title="Model")
-    bp.set(xlabel=' ', ylabel=' ', title='ROCAUC Evaluation Using ' + feature_selection + 
-           ' Features')
-    bp.set_xticklabels(bp.get_xticklabels(), rotation=90)
-    bp.set_ylim(top=1)
+    
+    bp = sns.barplot(df__, x='tissue', y='value', hue='variable')
     fig = bp.get_figure()
     plt.tight_layout()
     fig.savefig(output_dir + '/all_tissues/plt_rocauc_all_' + feature_selection + '.png')
+    plt.close()
 
 def plot_combined_acc(
         evaluation_df, feature_selection, output_dir):
@@ -47,7 +85,6 @@ def plot_combined_acc(
     evaluation_df_all = evaluation_df[evaluation_df['tissue']=='all_tissues']
     evaluation_df_rest = evaluation_df[evaluation_df['tissue']!='all_tissues']
     evaluation_df = pd.concat([evaluation_df_all, evaluation_df_rest])
-    # evaluation_df.to_csv(output_dir + '/all_tissues/evaluation.csv', index=False)    
     df__ = evaluation_df
     df__['n_0_plus_n_1'] = (df__['n_0'] + df__['n_1'])
 
@@ -101,6 +138,7 @@ def plot_combined_acc(
         plt.vlines(2.5+(3*i), 0, 1, colors='black', linestyles='dotted')
     
     plt.savefig(output_dir + '/all_tissues/plt_accuracy_all_' + feature_selection + '.png')
+    plt.close()
 
 def plot_confusion_matrix(
         y_test, y_pred, output_dir, feature_selection, model_name, nn=False):
