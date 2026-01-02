@@ -240,6 +240,7 @@ def main():
     evaluation_df = pd.concat([nn_hb, rf, ridge])
     
     print('....... Generating evaluation reports .......')
+    plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
     plot_combined_acc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)
 
