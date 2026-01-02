@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import RandomOverSampler
+from . import *
 
 def pearson(
         X_train_, X_val_, X_test, y_train_):
@@ -35,7 +36,6 @@ def cdk4_6_genes(
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
     genes = [x.lower() for x in genes]
     x = pd.DataFrame([x.split('_')[0] for x in df.columns])
-    print(x.isin(['label', 'cell line', 'Tissue'] + genes))
     x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df = df.loc[:, x]
 
@@ -57,49 +57,6 @@ def cdk4_6_cancer_genes(
     df_ = df_.loc[:, x]
     
     return df
-
-def plot_split(df, output_dir):
-    '''
-    Plot the split for training, validation and testing data with respect to the
-    number of sensitive and resistant cancer cell lines in each tissue type.
-    '''
-    
-    fig,ax = plt.subplots(3,1, figsize=(15,10))
-    
-    p1 = sns.barplot(ax=ax[0], data=df[df['train_val_test']=='train'], x='tissue', 
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p1.bar_label(p1.containers[0])
-    p1.bar_label(p1.containers[1])
-    p1.set_title('TRAIN')
-    p1.set_xlabel('')
-    p1.set_ylim(top=df['value'].max()+5)
-    p1.set_ylabel('# of cell lines')
-    p1.set_xticklabels(p1.get_xticklabels(), rotation=45)
-    
-    p2 = sns.barplot(ax=ax[1], data=df[df['train_val_test']=='val'], x='tissue',
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p2.bar_label(p2.containers[0])
-    p2.bar_label(p2.containers[1])
-    p2.set_title('VAL')
-    p2.set_xlabel('')
-    p2.set_ylim(top=df['value'].max()+5)
-    p2.set_ylabel('# of cell lines')
-    p2.set_xticklabels(p2.get_xticklabels(), rotation=45)
-    
-    p3 = sns.barplot(ax=ax[2], data=df[df['train_val_test']=='test'], x='tissue',
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p3.bar_label(p3.containers[0])
-    p3.bar_label(p3.containers[1])
-    p3.set_title('TEST')
-    p3.set_xlabel('tissue type')
-    p3.set_ylim(top=df['value'].max()+5)
-    p3.set_ylabel('# of cell lines')
-    p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
-    
-    plt.tight_layout()
-    plt.savefig(output_dir + '/all_tissues/data_split.png')
-    
-    return
 
 def split_scale_data(
         data_dir, output_dir, df, feature_selection, ros=True, 
@@ -233,7 +190,7 @@ def split_scale_data(
                                          value_vars=['sensitive', 'resistant'])
     grouped = pd.concat([all_tissues_df, grouped])
     
-    plot_split(grouped, output_dir)
+    plot_split(grouped, feature_selection, output_dir)
     
     if ros:
         ros = RandomOverSampler(random_state=0)
