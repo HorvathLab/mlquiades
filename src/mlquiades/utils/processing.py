@@ -33,10 +33,12 @@ def cdk4_6_genes(
     features that are in that list.
     '''
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
+    genes = [x.lower() for x in genes]
     x = pd.DataFrame([x.split('_')[0] for x in df.columns])
+    print(x.isin(['label', 'cell line', 'Tissue'] + genes))
     x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df = df.loc[:, x]
-    
+
     return df, genes
 
 def cdk4_6_cancer_genes(
@@ -100,7 +102,7 @@ def plot_split(df, output_dir):
     return
 
 def split_scale_data(
-        data_dir, output_dir, df, y_labels, feature_selection, ros=True, 
+        data_dir, output_dir, df, feature_selection, ros=True, 
         cdk4_6_genes_filename=None, cancer_genes_filename=None):
     '''
     Performs feature selection (3 options) and splits data into training,
@@ -118,7 +120,6 @@ def split_scale_data(
         df = cdk4_6_cancer_genes(data_dir=data_dir, df=df,
                                  cdk4_6_genes_filename=cdk4_6_genes_filename,
                                  cancer_genes_filename=cancer_genes_filename)
-
     # isolate the data that pertains to the sensitive class
     df_sensitive = df[df['label']==-1]
     breast_sensitive = df_sensitive[df_sensitive['Tissue']=='breast']
@@ -128,7 +129,6 @@ def split_scale_data(
         df_sensitive, df_sensitive['label'], test_size=.4)
     X_val_sensitive, X_test_sensitive, y_val_sensitive, y_test_sensitive = train_test_split(
         X_valtest_sensitive, y_valtest_sensitive, test_size=.5)
-    
     
     # isolate the data that pertains to the resistant class
     X_train_resistant = pd.DataFrame()
@@ -202,7 +202,6 @@ def split_scale_data(
     if feature_selection == 'pearson':
         X_train_, y_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test,
                                                      y_train_)
-    
     scaler = StandardScaler()
     X_train_ = scaler.fit_transform(X_train_)
     X_val_ = scaler.transform(X_val_)

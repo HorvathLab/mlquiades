@@ -208,7 +208,7 @@ def neural_net_with_hyperband(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
         step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
         patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-        feature_selection, metadata, plt_confusion=True, plt_rocauc=True):
+        feature_selection, metadata, plt_confusion=False, plt_rocauc=False):
     '''
     Builds hyperband-tuned neural net using keras. Fits the model to the randomly
     oversampled training data. Makes predictions on the testing dataset. Plots
@@ -283,7 +283,7 @@ def neural_net_with_hyperband(
 
 def random_forest(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
-        metadata, max_depth=2, random_state=0, plt_confusion=True, plt_rocauc=True):
+        metadata, max_depth=2, random_state=0, plt_confusion=False, plt_rocauc=False):
     '''
     Builds random forest model. Fits the model to the randomly oversampled
     training data. Makes predictions on the testing dataset. Plots confusion
@@ -333,7 +333,7 @@ def random_forest(
 
 def ridge_classifier(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
-        metadata, plt_confusion=True, plt_rocauc=True):
+        metadata, plt_confusion=False, plt_rocauc=False):
     '''
     Builds ridge classifier model. Fits the model to the randomly oversampled
     training data. Makes predictions on the testing dataset. Plots confusion
