@@ -67,9 +67,10 @@ def plot_combined_rocauc(
     df__['value'] = np.array(df__['value'], dtype='float')
     df__ = pd.DataFrame({'model': df__['model'], 'variable': df__['variable'],
                          'value': df__['value'], 'tissue': df__['tissue']})
-    
-    bp = sns.barplot(df__, x='tissue', y='value', hue='variable')
+    bp = sns.barplot(df__, x='tissue', y='value', hue='model')
     fig = bp.get_figure()
+    fig.set_size_inches((1.5*16, 4))
+    # plt.subplots(figsize=(20,20))
     plt.tight_layout()
     fig.savefig(output_dir + '/all_tissues/plt_rocauc_all_' + feature_selection + '.png')
     plt.close()
@@ -104,7 +105,7 @@ def plot_combined_acc(
 
     tissues = df__['tissue'].unique()
 
-    fig, ax = plt.subplots(1,1, sharex='col', sharey='row',figsize=(1.5*16, 4), tight_layout=True)
+    fig, ax = plt.subplots(1,1, sharex='col', sharey='row', figsize=(1.5*16, 4), tight_layout=True)
 
     spacer = ''
     models = list()
