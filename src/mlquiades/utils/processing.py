@@ -49,14 +49,14 @@ def cdk4_6_cancer_genes(
     '''
     cancer_genes = pd.read_csv(data_dir + cancer_genes_filename, sep='\t')
     cancer_genes = cancer_genes['Gene Symbol'].unique()
+    cancer_genes = [x.lower() for x in cancer_genes]
     df_, genes = cdk4_6_genes(data_dir, df, cdk4_6_genes_filename)
-    df_genes = pd.DataFrame(genes + cancer_genes.tolist())
+    df_genes = pd.DataFrame(genes + cancer_genes)
     genes = df_genes.iloc[:,0].unique().tolist()
     x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
-    x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
+    x = df_.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df_ = df_.loc[:, x]
-    
-    return df
+    return df_
 
 def split_scale_data(
         data_dir, output_dir, df, feature_selection, ros=True, 
