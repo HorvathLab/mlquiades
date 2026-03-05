@@ -1,5 +1,5 @@
 # mlquiades
-*2025/12/09*
+*2026/03/05*
 
 (pronounced *em-el-key-ah-days*)
 
@@ -13,7 +13,7 @@ There are three options for feature, in this case gene, selection. They include:
 
 ## Installation
  
-Ubuntu and MacOS are upported. Windows is not currently supported.
+Ubuntu and MacOS are supported. Windows is not currently supported.
 
 ```
 git init
