@@ -9,23 +9,24 @@ from imblearn.over_sampling import RandomOverSampler
 from . import *
 
 def pearson(
-        X_train_, X_val_, X_test, y_train_):
+        X_train_, X_val_, X_test, pearson_train):
     '''
     Performs Pearson correlation between every feature and the y-label values
     in the training data only. Maintains features that have a rho value of greater
     than or equal to .3.
     '''
-    f = X_train_.apply(lambda c: stats.pearsonr(c.to_numpy(),y_train_.to_numpy().\
-            reshape((y_train_.shape[0],))), axis=0)
+    f = X_train_.apply(lambda c: stats.pearsonr(c.to_numpy(), pearson_train.to_numpy().\
+            reshape((pearson_train.shape[0],))), axis=0)
     f=f.transpose()
     f.columns = ['rho','pvalue']
     f = pd.DataFrame(f).sort_values(by='rho', ascending=False)
     genes = f.index[f.rho>=.3]
-    X_train_ = X_train_.loc[:, X_train_.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
-    X_val_ = X_val_.loc[:, X_val_.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
-    X_test = X_test.loc[:, X_test.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
 
-    return X_train_, y_train_, X_val_, X_test
+    X_train_ = X_train_.loc[:, X_train_.columns.isin(genes)]
+    X_val_ = X_val_.loc[:, X_val_.columns.isin(genes)]
+    X_test = X_test.loc[:, X_test.columns.isin(genes)]
+
+    return X_train_, X_val_, X_test
 
 def cdk4_6_genes(
         data_dir, df, genes_file):
@@ -56,6 +57,7 @@ def cdk4_6_cancer_genes(
     x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
     x = df_.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df_ = df_.loc[:, x]
+    print(df_)
     return df_
 
 def split_scale_data(
@@ -150,15 +152,15 @@ def split_scale_data(
     metadata_train['train_val_test'] = 'train'
     metadata_val['train_val_test'] = 'val'
     metadata_test['train_val_test'] = 'test'
-    X_train_ = X_train_.drop(columns=['label', 'cell line', 'Tissue'])
-    X_val_ = X_val_.drop(columns=['label', 'cell line', 'Tissue'])
-    X_test = X_test.drop(columns=['label', 'cell line', 'Tissue'])
+    pearson_train = X_train_['for_pearson_calculation']
+    X_train_ = X_train_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
+    X_val_ = X_val_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
+    X_test = X_test.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
     
     metadata = pd.concat([metadata_train, metadata_val, metadata_test])
     
     if feature_selection == 'pearson':
-        X_train_, y_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test,
-                                                     y_train_)
+        X_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test, pearson_train)
     scaler = StandardScaler()
     X_train_ = scaler.fit_transform(X_train_)
     X_val_ = scaler.transform(X_val_)

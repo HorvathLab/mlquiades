@@ -213,9 +213,12 @@ def main():
             os.mkdir(output_dir + '/by_tissue/rocauc')
     
     print('....... Reading in data .......')
-    df = pd.read_csv(data_dir + data_filename)
+    df = pd.read_csv(data_dir + data_filename, index_col=0)
+    print(df)
     df['label'] = df['label_' + drug + '_' + gdsc]
-    columns_label = [x for x in df.columns if 'label_' in x]
+    # columns_label = [x for x in df.columns if 'label_' in x]
+    columns_label = [x for x in df.columns if 'gdsc' in x]
+    df['for_pearson_calculation'] = df['IC50_' + gdsc + '_' + drug]	
     df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(
         columns=columns_label)
     
