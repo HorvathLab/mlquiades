@@ -212,17 +212,15 @@ def main():
         if not os.path.isdir(output_dir + '/by_tissue/rocauc'):
             os.mkdir(output_dir + '/by_tissue/rocauc')
     
-    print('....... Reading in data .......')
-    df = pd.read_csv(data_dir + data_filename, index_col=0)
-    print(df)
+    print('....... Reading in data ......................')
+    df = pd.read_csv(data_dir + data_filename)
     df['label'] = df['label_' + drug + '_' + gdsc]
-    # columns_label = [x for x in df.columns if 'label_' in x]
     columns_label = [x for x in df.columns if 'gdsc' in x]
     df['for_pearson_calculation'] = df['IC50_' + gdsc + '_' + drug]	
     df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(
         columns=columns_label)
     
-    print('....... Splitting and scaling data .......')
+    print('....... Splitting and scaling data ...........')
     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
         data_dir=data_dir, output_dir=output_dir, df=df, ros=ros,
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
@@ -242,7 +240,7 @@ def main():
         plt_confusion=confusion, plt_rocauc=rocauc)
     evaluation_df = pd.concat([nn_hb, rf, ridge])
     
-    print('....... Generating evaluation reports .......')
+    print('....... Generating evaluation reports ........')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
     plot_combined_acc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)
