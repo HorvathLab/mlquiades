@@ -147,6 +147,18 @@ def params():
         action='store',
         dest='cancer_genes_filename',
         help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes (optional unless cdk4_6_cancer_genes selected for -r)')
+    parser.add_argument(
+        '--u',
+        type=str,
+        action='store',
+        dest='drug',
+        help='drug name (e.g. palbociclib or ribociclib)')
+    parser.add_argument(
+        '--v',
+        type=str,
+        action='store',
+        dest='gdsc',
+        help='gdsc version (e.g. gdsc1 or gdsc2)')
 
     return parser
 
@@ -172,6 +184,10 @@ def main():
     feature_selection = args.feature_selection
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
+    drug = args.drug
+    gdsc = args.gdsc
+    drug = drug.lower()
+    gdsc = gdsc.lower()
     
     if feature_selection is None:
         raise TypeError('missing feature selection (option --r)')
@@ -186,20 +202,30 @@ def main():
         os.mkdir(output_dir)
     if not os.path.isdir(output_dir + '/all_tissues/'):
         os.mkdir(output_dir + '/all_tissues')
-    if not os.path.isdir(output_dir + '/by_tissue/'):
-        os.mkdir(output_dir + '/by_tissue')
-    if not os.path.isdir(output_dir + '/by_tissue/confusion'):
-        os.mkdir(output_dir + '/by_tissue/confusion')
-    if not os.path.isdir(output_dir + '/by_tissue/rocauc'):
-        os.mkdir(output_dir + '/by_tissue/rocauc')
+    if rocauc or confusion:
+        if not os.path.isdir(output_dir + '/by_tissue/'):
+            os.mkdir(output_dir + '/by_tissue')
+    if confusion:
+        if not os.path.isdir(output_dir + '/by_tissue/confusion'):
+            os.mkdir(output_dir + '/by_tissue/confusion')
+    if rocauc:
+        if not os.path.isdir(output_dir + '/by_tissue/rocauc'):
+            os.mkdir(output_dir + '/by_tissue/rocauc')
     
-    print('....... Reading in data .......')
+    print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + data_filename)
-    print('....... Splitting and scaling data .......')
+    df['label'] = df['label_' + drug + '_' + gdsc]
+    columns_label = [x for x in df.columns if 'gdsc' in x]
+    df['for_pearson_calculation'] = df['IC50_' + gdsc + '_' + drug]	
+    df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(
+        columns=columns_label)
+    
+    print('....... Splitting and scaling data ...........')
     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
-        data_dir=data_dir, output_dir=output_dir, df=df, y_labels=df['label'], ros=ros,
+        data_dir=data_dir, output_dir=output_dir, df=df, ros=ros,
         feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
         cancer_genes_filename=cancer_genes_filename)
+
     print('....... Building and evaluating models .......')
     nn_hb = neural_net_with_hyperband(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
@@ -207,13 +233,14 @@ def main():
         patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
         feature_selection, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
     rf = random_forest(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata)
+        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
+        plt_confusion=confusion, plt_rocauc=rocauc)
     ridge = ridge_classifier(
         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
         plt_confusion=confusion, plt_rocauc=rocauc)
     evaluation_df = pd.concat([nn_hb, rf, ridge])
     
-    print('....... Generating evaluation reports .......')
+    print('....... Generating evaluation reports ........')
     plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
     plot_combined_acc(evaluation_df, feature_selection, output_dir)
     stitch_pngs(feature_selection, output_dir)

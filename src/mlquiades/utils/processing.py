@@ -6,25 +6,27 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import RandomOverSampler
+from . import *
 
 def pearson(
-        X_train_, X_val_, X_test, y_train_):
+        X_train_, X_val_, X_test, pearson_train):
     '''
     Performs Pearson correlation between every feature and the y-label values
     in the training data only. Maintains features that have a rho value of greater
     than or equal to .3.
     '''
-    f = X_train_.apply(lambda c: stats.pearsonr(c.to_numpy(),y_train_.to_numpy().\
-            reshape((y_train_.shape[0],))), axis=0)
+    f = X_train_.apply(lambda c: stats.pearsonr(c.to_numpy(), pearson_train.to_numpy().\
+            reshape((pearson_train.shape[0],))), axis=0)
     f=f.transpose()
     f.columns = ['rho','pvalue']
     f = pd.DataFrame(f).sort_values(by='rho', ascending=False)
     genes = f.index[f.rho>=.3]
-    X_train_ = X_train_.loc[:, X_train_.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
-    X_val_ = X_val_.loc[:, X_val_.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
-    X_test = X_test.loc[:, X_test.columns.isin(['label', 'cell line', 'Tissue'] + genes)]
 
-    return X_train_, y_train_, X_val_, X_test
+    X_train_ = X_train_.loc[:, X_train_.columns.isin(genes)]
+    X_val_ = X_val_.loc[:, X_val_.columns.isin(genes)]
+    X_test = X_test.loc[:, X_test.columns.isin(genes)]
+
+    return X_train_, X_val_, X_test
 
 def cdk4_6_genes(
         data_dir, df, genes_file):
@@ -33,10 +35,11 @@ def cdk4_6_genes(
     features that are in that list.
     '''
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
+    genes = [x.lower() for x in genes]
     x = pd.DataFrame([x.split('_')[0] for x in df.columns])
     x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df = df.loc[:, x]
-    
+
     return df, genes
 
 def cdk4_6_cancer_genes(
@@ -47,60 +50,18 @@ def cdk4_6_cancer_genes(
     '''
     cancer_genes = pd.read_csv(data_dir + cancer_genes_filename, sep='\t')
     cancer_genes = cancer_genes['Gene Symbol'].unique()
+    cancer_genes = [x.lower() for x in cancer_genes]
     df_, genes = cdk4_6_genes(data_dir, df, cdk4_6_genes_filename)
-    df_genes = pd.DataFrame(genes + cancer_genes.tolist())
+    df_genes = pd.DataFrame(genes + cancer_genes)
     genes = df_genes.iloc[:,0].unique().tolist()
     x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
-    x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
+    x = df_.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
     df_ = df_.loc[:, x]
-    
-    return df
-
-def plot_split(df, output_dir):
-    '''
-    Plot the split for training, validation and testing data with respect to the
-    number of sensitive and resistant cancer cell lines in each tissue type.
-    '''
-    
-    fig,ax = plt.subplots(3,1, figsize=(15,10))
-    
-    p1 = sns.barplot(ax=ax[0], data=df[df['train_val_test']=='train'], x='tissue', 
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p1.bar_label(p1.containers[0])
-    p1.bar_label(p1.containers[1])
-    p1.set_title('TRAIN')
-    p1.set_xlabel('')
-    p1.set_ylim(top=df['value'].max()+5)
-    p1.set_ylabel('# of cell lines')
-    p1.set_xticklabels(p1.get_xticklabels(), rotation=45)
-    
-    p2 = sns.barplot(ax=ax[1], data=df[df['train_val_test']=='val'], x='tissue',
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p2.bar_label(p2.containers[0])
-    p2.bar_label(p2.containers[1])
-    p2.set_title('VAL')
-    p2.set_xlabel('')
-    p2.set_ylim(top=df['value'].max()+5)
-    p2.set_ylabel('# of cell lines')
-    p2.set_xticklabels(p2.get_xticklabels(), rotation=45)
-    
-    p3 = sns.barplot(ax=ax[2], data=df[df['train_val_test']=='test'], x='tissue',
-                     y='value', hue='variable', palette=sns.color_palette('icefire'))
-    p3.bar_label(p3.containers[0])
-    p3.bar_label(p3.containers[1])
-    p3.set_title('TEST')
-    p3.set_xlabel('tissue type')
-    p3.set_ylim(top=df['value'].max()+5)
-    p3.set_ylabel('# of cell lines')
-    p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
-    
-    plt.tight_layout()
-    plt.savefig(output_dir + '/all_tissues/data_split.png')
-    
-    return
+    print(df_)
+    return df_
 
 def split_scale_data(
-        data_dir, output_dir, df, y_labels, feature_selection, ros=True, 
+        data_dir, output_dir, df, feature_selection, ros=True, 
         cdk4_6_genes_filename=None, cancer_genes_filename=None):
     '''
     Performs feature selection (3 options) and splits data into training,
@@ -118,7 +79,6 @@ def split_scale_data(
         df = cdk4_6_cancer_genes(data_dir=data_dir, df=df,
                                  cdk4_6_genes_filename=cdk4_6_genes_filename,
                                  cancer_genes_filename=cancer_genes_filename)
-
     # isolate the data that pertains to the sensitive class
     df_sensitive = df[df['label']==-1]
     breast_sensitive = df_sensitive[df_sensitive['Tissue']=='breast']
@@ -128,7 +88,6 @@ def split_scale_data(
         df_sensitive, df_sensitive['label'], test_size=.4)
     X_val_sensitive, X_test_sensitive, y_val_sensitive, y_test_sensitive = train_test_split(
         X_valtest_sensitive, y_valtest_sensitive, test_size=.5)
-    
     
     # isolate the data that pertains to the resistant class
     X_train_resistant = pd.DataFrame()
@@ -154,7 +113,6 @@ def split_scale_data(
     y_train_resistant_b = pd.DataFrame()
     y_val_resistant_b = pd.DataFrame()
     y_test_resistant_b = pd.DataFrame()
-
     if len(breast_sensitive)>0:
         X_train_sensitive_b, X_valtest_sensitive_b, y_train_sensitive_b, y_valtest_sensitive_b = train_test_split(
             breast_sensitive, breast_sensitive['label'], test_size=.4)
@@ -194,16 +152,15 @@ def split_scale_data(
     metadata_train['train_val_test'] = 'train'
     metadata_val['train_val_test'] = 'val'
     metadata_test['train_val_test'] = 'test'
-    X_train_ = X_train_.drop(columns=['label', 'cell line', 'Tissue'])
-    X_val_ = X_val_.drop(columns=['label', 'cell line', 'Tissue'])
-    X_test = X_test.drop(columns=['label', 'cell line', 'Tissue'])
+    pearson_train = X_train_['for_pearson_calculation']
+    X_train_ = X_train_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
+    X_val_ = X_val_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
+    X_test = X_test.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
     
     metadata = pd.concat([metadata_train, metadata_val, metadata_test])
     
     if feature_selection == 'pearson':
-        X_train_, y_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test,
-                                                     y_train_)
-    
+        X_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test, pearson_train)
     scaler = StandardScaler()
     X_train_ = scaler.fit_transform(X_train_)
     X_val_ = scaler.transform(X_val_)
@@ -235,7 +192,7 @@ def split_scale_data(
                                          value_vars=['sensitive', 'resistant'])
     grouped = pd.concat([all_tissues_df, grouped])
     
-    plot_split(grouped, output_dir)
+    plot_split(grouped, feature_selection, output_dir)
     
     if ros:
         ros = RandomOverSampler(random_state=0)
