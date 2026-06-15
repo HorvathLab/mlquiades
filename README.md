@@ -19,12 +19,12 @@ Ubuntu and MacOS are supported. Windows is not currently supported.
 git init
 git clone git@github.com:HorvathLab/mlquiades.git
 cd mlquiades
+uv venv
+# activate the venv: your command may differ for a different shell
+source .venv/bin/activate
 ```
 
-Setting up Environment (if not using uv)
-```
-pip install -e .     #installs necessary packages using pyproject.toml; edit pyproject.toml to fit your package versions if necessary
-```
+If you use a different package manager, install packages to your environment from `pyproject.toml`
 
 ## Usage (default)
 
