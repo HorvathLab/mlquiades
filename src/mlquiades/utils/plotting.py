@@ -7,7 +7,7 @@ import matplotlib.patches as mpatches
 from sklearn.metrics import ConfusionMatrixDisplay
 
 
-def plot_split(df, feature_selection, output_dir):
+def plot_split(df, output_dir):
     '''
     Plot the split for training, validation and testing data with respect to the
     number of sensitive and resistant cancer cell lines in each tissue type.
@@ -46,7 +46,7 @@ def plot_split(df, feature_selection, output_dir):
     p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
     
     plt.tight_layout()
-    plt.savefig(output_dir + '/all_tissues/data_split.png')
+    plt.savefig(output_dir + '/data_split.png')
     plt.close()
     
     return
@@ -72,8 +72,9 @@ def plot_combined_rocauc(
     fig.set_size_inches((1.5*16, 4))
     # plt.subplots(figsize=(20,20))
     plt.tight_layout()
-    fig.savefig(output_dir + '/all_tissues/plt_rocauc_all_' + feature_selection + '.png')
+    fig.savefig(output_dir + '/plt_rocauc_all_' + feature_selection + '.png')
     plt.close()
+    df__.to_csv(output_dir + '/evaluation_df_rocauc.csv', index=False)
 
 def plot_combined_acc(
         evaluation_df, feature_selection, output_dir):
@@ -138,8 +139,10 @@ def plot_combined_acc(
     for i in np.arange(len(tissues)):
         plt.vlines(2.5+(3*i), 0, 1, colors='black', linestyles='dotted')
     
-    plt.savefig(output_dir + '/all_tissues/plt_accuracy_all_' + feature_selection + '.png')
+    plt.savefig(output_dir + '/plt_accuracy_all_' + feature_selection + '.png')
     plt.close()
+    df__.to_csv(output_dir + '/evaluation_df_acc.csv', index=False)
+
 
 def plot_confusion_matrix(
         y_test, y_pred, output_dir, feature_selection, model_name, nn=False):
@@ -176,29 +179,35 @@ def plot_rocauc(
     plt.close()
 
 def stitch_pngs(
-        feature_selection, output_dir):
+        output_dir, data_type):
     '''
-    Puts resulting pngs into an md and html reports.
+    Puts resulting pngs from all feature selection methods into md and html reports.
     '''
     model_list = ['nn_hb','rf','ridge']
     model_list_full = ['Neural Net with Hyperband Tuning', 'Random Forest',
-                       'Ridge Classifier']
+                        'Ridge Classifier']
     report_str = ['# Report', '', '## Data Distribution', '']
-    report_str.append('![data split](all_tissues/data_split.png)')
-    report_str.extend(['', '## Evaluation - Accuracy', ''])
-    report_str.append('![acc all](all_tissues/plt_accuracy_all_' + feature_selection \
-        + '.png)')
-    report_str.extend(['', '## Evaluation - ROCAUC', '### (for tissues that contain both \
-                       classes in the testing dataset)', ''])
-    report_str.append('![rocauc all](all_tissues/plt_rocauc_all_' + feature_selection \
-        + '.png)')
-    
-    with open(output_dir + '/report.md', 'w') as f:
+    report_str.append('![data split](data_split.png)')
+
+    feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
+    for feature_select in feature_selections:
+        report_str.extend(['', '## Evaluation - Accuracy (' + feature_select \
+                        + ')', ''])
+        report_str.append('![acc all](' + feature_select + '_' + data_type \
+                        + '/plt_accuracy_all_' + feature_select + '.png)')
+    for feature_select in feature_selections:
+        report_str.extend(['', '## Evaluation - ROCAUC (' + feature_select \
+                        + ')', '### (for tissues that contain both classes \
+                        in the testing dataset)', ''])
+        report_str.append('![rocauc all](' + feature_select + '_' + data_type \
+                        + '/plt_rocauc_all_' + feature_select + '.png)')
+
+    with open(output_dir + '/report_' + data_type + '.md', 'w') as f:
         for item in report_str:
             f.write(item)
             f.write('\n')
-    with open(output_dir + '/report.md', 'r') as f:
+    with open(output_dir + '/report_' + data_type + '.md', 'r') as f:
         md = f.read()
     html = markdown.markdown(md)
-    with open(output_dir + '/report.html', 'w') as f:
+    with open(output_dir + '/report_' + data_type + '.html', 'w') as f:
         f.write(html)

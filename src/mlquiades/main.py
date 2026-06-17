@@ -31,6 +31,12 @@ def params():
         dest='data_filename',
         help='data filename (required)')
     parser.add_argument(
+        '--cc',
+        type=str,
+        action='store',
+        dest='data_filename_2',
+        help='data filename 2 (optional)')
+    parser.add_argument(
         '--d',
         type=bool,
         action='store',
@@ -159,6 +165,12 @@ def params():
         action='store',
         dest='gdsc',
         help='gdsc version (e.g. gdsc1 or gdsc2)')
+    parser.add_argument(
+        '--w',
+        type=str,
+        action='store',
+        dest='sensitivity_metric',
+        help='drug sensitivity metric (e.g. ic50 or auc)')
 
     return parser
 
@@ -168,6 +180,7 @@ def main():
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
     data_filename = args.data_filename
+    # data_filename_2 = args.data_filename_2
     confusion = args.confusion
     rocauc = args.rocauc
     ros = args.ros
@@ -188,6 +201,7 @@ def main():
     gdsc = args.gdsc
     drug = drug.lower()
     gdsc = gdsc.lower()
+    sensitivity_metric = args.sensitivity_metric
     
     if feature_selection is None:
         raise TypeError('missing feature selection (option --r)')
@@ -200,50 +214,86 @@ def main():
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
-    if not os.path.isdir(output_dir + '/all_tissues/'):
-        os.mkdir(output_dir + '/all_tissues')
-    if rocauc or confusion:
-        if not os.path.isdir(output_dir + '/by_tissue/'):
-            os.mkdir(output_dir + '/by_tissue')
-    if confusion:
-        if not os.path.isdir(output_dir + '/by_tissue/confusion'):
-            os.mkdir(output_dir + '/by_tissue/confusion')
-    if rocauc:
-        if not os.path.isdir(output_dir + '/by_tissue/rocauc'):
-            os.mkdir(output_dir + '/by_tissue/rocauc')
-    
+
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + data_filename)
-    df['label'] = df['label_' + drug + '_' + gdsc]
+    # if data_filename_2 != None:
+    #     df2 = pd.read_csv(data_dir + data_filename_2)
+    #     df = df.merge(df2.iloc[:, 16:], left_index=True, right_index=True, how='inner')
+    
+    if sensitivity_metric=='ic50':
+        df['label'] = df['label_' + drug + '_' + gdsc]
+    else:
+        df['label'] = df[sensitivity_metric.upper() + '_' + gdsc + '_' + drug]
     columns_label = [x for x in df.columns if 'gdsc' in x]
-    df['for_pearson_calculation'] = df['IC50_' + gdsc + '_' + drug]	
-    df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(
-        columns=columns_label)
+    df['for_pearson_calculation'] = df[sensitivity_metric.upper() + '_' + gdsc + '_' + drug]
+    df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(columns=columns_label)
     
     print('....... Splitting and scaling data ...........')
-    X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
-        data_dir=data_dir, output_dir=output_dir, df=df, ros=ros,
-        feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
-        cancer_genes_filename=cancer_genes_filename)
-
-    print('....... Building and evaluating models .......')
-    nn_hb = neural_net_with_hyperband(
-        X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
-        step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-        patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-        feature_selection, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
-    rf = random_forest(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
-        plt_confusion=confusion, plt_rocauc=rocauc)
-    ridge = ridge_classifier(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
-        plt_confusion=confusion, plt_rocauc=rocauc)
-    evaluation_df = pd.concat([nn_hb, rf, ridge])
+    X_train_split, y_train, X_val_split, y_val_, X_test_split, y_test, pearson_train, metadata = split_data(
+        output_dir=output_dir, df=df, drug_response_metric=sensitivity_metric)
     
-    print('....... Generating evaluation reports ........')
-    plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
-    plot_combined_acc(evaluation_df, feature_selection, output_dir)
-    stitch_pngs(feature_selection, output_dir)
+    feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
+    data_types = ['gex']#, 'isoforms']
+    for data_type in data_types:
+        if data_type == 'gex':
+            search_symbol = 'ensg'
+        else:
+            search_symbol = 'enst'
+        
+        for feature_select in feature_selections:
+            output_dir_feature = output_dir + '/' + feature_select + '_' + data_type
+            X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains(search_symbol)]
+            X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains(search_symbol)]
+            X_test = X_test_split.iloc[:, X_test_split.columns.str.contains(search_symbol)]
+            if not os.path.isdir(output_dir_feature):
+                os.mkdir(output_dir_feature)
+            X_train_, X_val_, X_test = select_features(
+                data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
+                cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
+            X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
+            X_train_, y_train_ = ros_run(X_train_, y_train)
+            print('....... Building and evaluating models .......')
+            if sensitivity_metric=='ic50':
+                nn_hb = neural_net_with_hyperband(
+                    X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
+                    step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
+                    patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir_feature,
+                    feature_select, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
+                rf = random_forest(
+                    X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
+                    plt_confusion=confusion, plt_rocauc=rocauc)
+                ridge = ridge_classifier(
+                    X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
+                    plt_confusion=confusion, plt_rocauc=rocauc)
+                evaluation_df = pd.concat([nn_hb, rf, ridge])
+                evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
+                    'n_correctly_predicted_resistant_cell_lines']
+                evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
+            print('....... Generating evaluation reports ........')
+            plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
+            plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
+        stitch_pngs(output_dir, data_type)
+            
+    # else:
+    #     # nn_hb = neural_net_with_hyperband_regression(
+    #     #     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
+    #     #     step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
+    #     #     patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
+    #     #     feature_selection, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
+    #     # rf = random_forest_regression(
+    #     #     X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
+    #     #     plt_confusion=confusion, plt_rocauc=rocauc)
+    #     ridge = ridge_regression(
+    #         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
+    #         plt_confusion=confusion, plt_rocauc=rocauc)
+    #     evaluation_df = ridge
+    #     # elastic = elastic_net(
+    #     #     X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
+    #     #     plt_confusion=confusion, plt_rocauc=rocauc)
+    #     # evaluation_df = pd.concat([nn_hb, rf, ridge, elastic])
+    
+    # print(evaluation_df)
 
 if __name__=='__main__': 
     main()
