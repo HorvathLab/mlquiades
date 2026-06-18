@@ -43,13 +43,28 @@ python src/mlquiades/main.py --a sample_data --b output --c isoforms.csv --o 50 
 
 ```
 ├── output
-│   ├── all_tissues
-│   │   ├── data_split.csv
-│   │   ├── data_split.png
-│   │   ├── plt_accuracy_all_cdk4_6_genes.png
-│   │   └── plt_rocauc_all_cdk4_6_genes.png
-│   ├── report.html
-│   └── report.md
+│   ├── cdk4_6_cancer_gex
+│   │   ├── evaluation_df_acc.csv
+│   │   ├── evaluation_df.csv
+│   │   ├── evaluation_df_rocauc.csv
+│   │   ├── plt_accuracy_all_cdk4_6_cancer.png
+│   │   └── plt_rocauc_all_cdk4_6_cancer.png
+│   ├── cdk4_6_genes_gex
+│   │   ├── evaluation_df_acc.csv
+│   │   ├── evaluation_df.csv
+│   │   ├── evaluation_df_rocauc.csv
+│   │   ├── plt_accuracy_all_cdk4_6_genes.png
+│   │   └── plt_rocauc_all_cdk4_6_genes.png
+│   ├── data_split.csv
+│   ├── data_split.png
+│   ├── pearson_gex
+│   │   ├── evaluation_df_acc.csv
+│   │   ├── evaluation_df.csv
+│   │   ├── evaluation_df_rocauc.csv
+│   │   ├── plt_accuracy_all_pearson.png
+│   │   └── plt_rocauc_all_pearson.png
+│   ├── report_gex.html
+│   └── report_gex.md
 ```
 
 ## Usage (thorough)
