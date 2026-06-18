@@ -137,22 +137,21 @@ def params():
         '--r',
         type=str,
         action='store',
-        dest='feature_selection',
-        default=None,
-        help='choose one of three options for feature selection for the ml models,' \
-        'options include: cdk4_6_genes, cdk4_6_cancer_genes, pearson (required)')
+        dest='data_type',
+        default='both',
+        help='The data type going into the model. Options include: gex, isoforms, both.')
     parser.add_argument(
         '--s',
         type=str,
         action='store',
         dest='cdk4_6_genes_filename',
-        help='filename for cdk4 and cdk6 genes for the feature selection option cdk4_6_genes (optional if pearson selected for -r)')
+        help='filename for cdk4 and cdk6 genes for the feature selection option cdk4_6_genes')
     parser.add_argument(
         '--t',
         type=str,
         action='store',
         dest='cancer_genes_filename',
-        help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes (optional unless cdk4_6_cancer_genes selected for -r)')
+        help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes')
     parser.add_argument(
         '--u',
         type=str,
@@ -180,7 +179,7 @@ def main():
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
     data_filename = args.data_filename
-    # data_filename_2 = args.data_filename_2
+    data_filename_2 = args.data_filename_2
     confusion = args.confusion
     rocauc = args.rocauc
     ros = args.ros
@@ -194,32 +193,27 @@ def main():
     epochs = args.epochs
     learning_rate_min = args.learning_rate_min
     learning_rate_max = args.learning_rate_max
-    feature_selection = args.feature_selection
+    data_type = args.data_type
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
     drug = args.drug
     gdsc = args.gdsc
     drug = drug.lower()
     gdsc = gdsc.lower()
-    sensitivity_metric = args.sensitivity_metric
-    
-    if feature_selection is None:
-        raise TypeError('missing feature selection (option --r)')
-    if feature_selection == 'cdk4_6_genes':
-        if cdk4_6_filename is None:
-            raise TypeError('missing cdk4_6_genes_filename (option --s)')
-    if feature_selection == 'cdk4_6_cancer_genes':
-        if cancer_genes_filename is None:
-            raise TypeError('missing cancer_genes_filename (option --t)')           
+    sensitivity_metric = args.sensitivity_metric        
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
+    if data_type not in ['gex', 'isoforms', 'both']:
+        raise TypeError('The data_type (option -r) is incorrect. Please supply either gex, isoforms, \
+                        or both')
+    
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + data_filename)
-    # if data_filename_2 != None:
-    #     df2 = pd.read_csv(data_dir + data_filename_2)
-    #     df = df.merge(df2.iloc[:, 16:], left_index=True, right_index=True, how='inner')
+    if data_filename_2 != None:
+        df2 = pd.read_csv(data_dir + data_filename_2)
+        df = df.merge(df2.iloc[:, 16:], left_index=True, right_index=True, how='inner')
     
     if sensitivity_metric=='ic50':
         df['label'] = df['label_' + drug + '_' + gdsc]
@@ -234,7 +228,12 @@ def main():
         output_dir=output_dir, df=df, drug_response_metric=sensitivity_metric)
     
     feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
-    data_types = ['gex']#, 'isoforms']
+    
+    if data_type == 'both':
+        data_types = ['gex', 'isoforms']
+    else:
+        data_types = data_type
+    
     for data_type in data_types:
         if data_type == 'gex':
             search_symbol = 'ensg'
@@ -246,13 +245,16 @@ def main():
             X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains(search_symbol)]
             X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains(search_symbol)]
             X_test = X_test_split.iloc[:, X_test_split.columns.str.contains(search_symbol)]
+            
             if not os.path.isdir(output_dir_feature):
                 os.mkdir(output_dir_feature)
+            
             X_train_, X_val_, X_test = select_features(
                 data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
                 cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
             X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
             X_train_, y_train_ = ros_run(X_train_, y_train)
+            
             print('....... Building and evaluating models .......')
             if sensitivity_metric=='ic50':
                 nn_hb = neural_net_with_hyperband(
@@ -270,6 +272,7 @@ def main():
                 evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
                     'n_correctly_predicted_resistant_cell_lines']
                 evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
+            
             print('....... Generating evaluation reports ........')
             plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
