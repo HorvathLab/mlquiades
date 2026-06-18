@@ -1,7 +1,7 @@
 # mlquiades
 *2026/06/18*
 
-(pronounced *em-el-key-ah-days*)
+(pronounced *em-el-kee-ah-days*)
 
 This package takes in bulk RNA cancer cell line sequencing (processed from raw fastqs to TPM counts using STAR) data and GDSC1 and GDSC2 IC50 drug sensitivity scores for palbociclib to build and evaluate three machine learning models.
 
@@ -42,29 +42,49 @@ python src/mlquiades/main.py --a sample_data --b test --c tpm_palb_rib_with_meta
 ## Output
 
 ```
-├── output
-│   ├── cdk4_6_cancer_gex
-│   │   ├── evaluation_df_acc.csv
-│   │   ├── evaluation_df.csv
-│   │   ├── evaluation_df_rocauc.csv
-│   │   ├── plt_accuracy_all_cdk4_6_cancer.png
-│   │   └── plt_rocauc_all_cdk4_6_cancer.png
-│   ├── cdk4_6_genes_gex
-│   │   ├── evaluation_df_acc.csv
-│   │   ├── evaluation_df.csv
-│   │   ├── evaluation_df_rocauc.csv
-│   │   ├── plt_accuracy_all_cdk4_6_genes.png
-│   │   └── plt_rocauc_all_cdk4_6_genes.png
-│   ├── data_split.csv
-│   ├── data_split.png
-│   ├── pearson_gex
-│   │   ├── evaluation_df_acc.csv
-│   │   ├── evaluation_df.csv
-│   │   ├── evaluation_df_rocauc.csv
-│   │   ├── plt_accuracy_all_pearson.png
-│   │   └── plt_rocauc_all_pearson.png
-│   ├── report_gex.html
-│   └── report_gex.md
+└── output
+    ├── cdk4_6_cancer_gex
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_cdk4_6_cancer.png
+    │   └── plt_rocauc_all_cdk4_6_cancer.png
+    ├── cdk4_6_cancer_isoforms
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_cdk4_6_cancer.png
+    │   └── plt_rocauc_all_cdk4_6_cancer.png
+    ├── cdk4_6_genes_gex
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_cdk4_6_genes.png
+    │   └── plt_rocauc_all_cdk4_6_genes.png
+    ├── cdk4_6_genes_isoforms
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_cdk4_6_genes.png
+    │   └── plt_rocauc_all_cdk4_6_genes.png
+    ├── data_split.csv
+    ├── data_split.png
+    ├── pearson_gex
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_pearson.png
+    │   └── plt_rocauc_all_pearson.png
+    ├── pearson_isoforms
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_pearson.png
+    │   └── plt_rocauc_all_pearson.png
+    ├── report_gex.html
+    ├── report_gex.md
+    ├── report_isoforms.html
+    └── report_isoforms.md
 ```
 
 
