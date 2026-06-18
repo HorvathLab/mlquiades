@@ -211,14 +211,18 @@ def main():
     
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + data_filename)
-    if data_filename_2 != None:
-        df2 = pd.read_csv(data_dir + data_filename_2)
-        df = df.merge(df2.iloc[:, 16:], left_index=True, right_index=True, how='inner')
+    if data_type in ['isoforms', both]:
+        if data_filename_2 == None:
+            raise TypeError('Please provide the isoform file as part of option -cc')
+        if data_filename_2 != None:
+            df2 = pd.read_csv(data_dir + data_filename_2)
+            df = df.merge(df2.iloc[:, 16:], left_index=True, right_index=True, how='inner')
     
     if sensitivity_metric=='ic50':
         df['label'] = df['label_' + drug + '_' + gdsc]
     else:
         df['label'] = df[sensitivity_metric.upper() + '_' + gdsc + '_' + drug]
+    
     columns_label = [x for x in df.columns if 'gdsc' in x]
     df['for_pearson_calculation'] = df[sensitivity_metric.upper() + '_' + gdsc + '_' + drug]
     df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(columns=columns_label)
