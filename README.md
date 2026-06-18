@@ -1,5 +1,5 @@
 # mlquiades
-*2026/03/05*
+*2026/06/18*
 
 (pronounced *em-el-key-ah-days*)
 
@@ -7,7 +7,7 @@ This package takes in bulk RNA cancer cell line sequencing (processed from raw f
 
 These models include: neural net with hyperband, random forest, and ridge classifier.
 
-There are three options for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes (COSMIC); and a Pearson correlation method that keeps only the genes that have rho>=.3 value with the IC50 score in the training dataset only.
+There are avenues for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes (COSMIC); and a Pearson correlation method that keeps only the genes that have rho>=.3 value with the IC50 score in the training dataset only.
 
 <img src='https://github.com/HorvathLab/mlquiades/blob/e8f528ef838218006ed4c53166f81352a3738482/output/all_tissues/plt_accuracy_all_cdk4_6_genes.png' width=100% height=100%>
 
