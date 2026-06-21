@@ -9,9 +9,7 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import RandomOverSampler
 from sklearn.preprocessing import StandardScaler
 
-dir_ = os.path.dirname(os.path.abspath('src/mlquiades/utils/preprocessing.py'))
-sys.path.append(dir_)
-from processing import pearson
+from src.mlquiades.utils.processing import *
 
 def test_pearson():
     '''
@@ -42,8 +40,6 @@ def test_pearson():
     X_train_.columns = colnames
     X_val_.columns = colnames
     X_test.columns = colnames
-    A, B, C, D, = pearson(X_train_, X_val_, X_test, y_train_)
+    A, B, C = pearson(X_train_, X_val_, X_test, y_train_)
     
     assert A.shape[1] == 80
-
-
