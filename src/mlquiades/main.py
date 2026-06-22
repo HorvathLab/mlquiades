@@ -170,6 +170,13 @@ def params():
         action='store',
         dest='sensitivity_metric',
         help='drug sensitivity metric (e.g. ic50 or auc)')
+    parser.add_argument(
+        '--x',
+        type=int,
+        action='store',
+        dest='max_layers',
+        default=20,
+        help='the maximum number of layers for the neural net hyperband parameter tuning (optional)')
 
     return parser
 
@@ -196,6 +203,7 @@ def main():
     data_type = args.data_type
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
+    max_layers = args.max_layers
     drug = args.drug
     gdsc = args.gdsc
     drug = drug.lower()
@@ -211,7 +219,7 @@ def main():
     
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + data_filename)
-    if data_type in ['isoforms', both]:
+    if data_type in ['isoforms', 'both']:
         if data_filename_2 == None:
             raise TypeError('Please provide the isoform file as part of option -cc')
         if data_filename_2 != None:
@@ -235,21 +243,24 @@ def main():
     
     if data_type == 'both':
         data_types = ['gex', 'isoforms']
-    else:
-        data_types = data_type
+    elif data_type == 'gex':
+        data_types = ['gex']
+    elif data_type == 'isoforms':
+        data_types = ['isoforms']
     
     for data_type in data_types:
-        if data_type == 'gex':
-            search_symbol = 'ensg'
+        if data_type == ['gex']:
+            search_symbol = ['ensg']
+        elif data_type == ['isoforms']:
+            search_symbol = ['enst']
         else:
-            search_symbol = 'enst'
+            search_symbol = ['ensg', 'enst']
         
         for feature_select in feature_selections:
             output_dir_feature = output_dir + '/' + feature_select + '_' + data_type
-            X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains(search_symbol)]
-            X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains(search_symbol)]
-            X_test = X_test_split.iloc[:, X_test_split.columns.str.contains(search_symbol)]
-            
+            X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
+            X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
+            X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
             if not os.path.isdir(output_dir_feature):
                 os.mkdir(output_dir_feature)
             
@@ -264,8 +275,8 @@ def main():
                 nn_hb = neural_net_with_hyperband(
                     X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
                     step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-                    patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir_feature,
-                    feature_select, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
+                    patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
+                    metadata)
                 rf = random_forest(
                     X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
                     plt_confusion=confusion, plt_rocauc=rocauc)

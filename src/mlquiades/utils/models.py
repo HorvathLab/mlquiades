@@ -58,8 +58,8 @@ def counter(y_test, y_pred, nn=False):
 def neural_net_with_hyperband(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
         step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-        patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-        feature_selection, metadata, plt_confusion=False, plt_rocauc=False):
+        patience, min_delta, epochs, learning_rate_min, learning_rate_max,
+        max_layers, metadata):
     '''
     Builds hyperband-tuned neural net using keras. Fits the model to the randomly
     oversampled training data. Makes predictions on the testing dataset. Plots
@@ -67,7 +67,7 @@ def neural_net_with_hyperband(
     '''
     def build_model(hp):
         model = keras.Sequential()
-        for i in range(hp.Int('n_layers', min_value=1, max_value=20)):
+        for i in range(hp.Int('n_layers', min_value=1, max_value=max_layers)):
             model.add(Dense(units=hp.Int('units__' + str(i), min_value=min_nodes,
                                          max_value=max_nodes, step=step_size_nodes), activation='relu'))
         model.add(layers.Dense(1, activation='sigmoid'))
