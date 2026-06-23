@@ -44,13 +44,6 @@ def params():
         default=False,
         help='plot confusion matrices per tissue type')
     parser.add_argument(
-        '--e',
-        type=bool,
-        action='store',
-        dest='rocauc', 
-        default=False,
-        help='plot rocauc per tissue type')
-    parser.add_argument(
         '--f',
         type=bool,
         action='store',
@@ -63,7 +56,7 @@ def params():
         action='store',
         dest='step_size_nodes',
         default=5,
-        help='step size for nodes in hyperparameter tuning for nn w/ hyperband '
+        help='step size for nodes in hyperparameter tuning for nn w/ hyperband'
         '(optional)')
     parser.add_argument(
         '--i',
@@ -154,24 +147,6 @@ def params():
         help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes')
     parser.add_argument(
         '--u',
-        type=str,
-        action='store',
-        dest='drug',
-        help='drug name (e.g. palbociclib or ribociclib)')
-    parser.add_argument(
-        '--v',
-        type=str,
-        action='store',
-        dest='gdsc',
-        help='gdsc version (e.g. gdsc1 or gdsc2)')
-    parser.add_argument(
-        '--w',
-        type=str,
-        action='store',
-        dest='sensitivity_metric',
-        help='drug sensitivity metric (e.g. ic50 or auc)')
-    parser.add_argument(
-        '--x',
         type=int,
         action='store',
         dest='max_layers',
@@ -188,7 +163,6 @@ def main():
     data_filename = args.data_filename
     data_filename_2 = args.data_filename_2
     confusion = args.confusion
-    rocauc = args.rocauc
     ros = args.ros
     step_size_nodes = args.step_size_nodes
     min_nodes = args.min_nodes
@@ -204,11 +178,6 @@ def main():
     cdk4_6_filename = args.cdk4_6_genes_filename
     cancer_genes_filename = args.cancer_genes_filename
     max_layers = args.max_layers
-    drug = args.drug
-    gdsc = args.gdsc
-    drug = drug.lower()
-    gdsc = gdsc.lower()
-    sensitivity_metric = args.sensitivity_metric        
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
@@ -226,18 +195,12 @@ def main():
             df2 = pd.read_csv(data_dir + data_filename_2)
             df = df.merge(df2.iloc[:, 16:], left_index=True, right_index=True, how='inner')
     
-    if sensitivity_metric=='ic50':
-        df['label'] = df['label_' + drug + '_' + gdsc]
-    else:
-        df['label'] = df[sensitivity_metric.upper() + '_' + gdsc + '_' + drug]
-    
-    columns_label = [x for x in df.columns if 'gdsc' in x]
-    df['for_pearson_calculation'] = df[sensitivity_metric.upper() + '_' + gdsc + '_' + drug]
-    df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(columns=columns_label)
+    df['for_pearson_calculation'] = df['ic50']
+    df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
     
     print('....... Splitting and scaling data ...........')
     X_train_split, y_train, X_val_split, y_val_, X_test_split, y_test, pearson_train, metadata = split_data(
-        output_dir=output_dir, df=df, drug_response_metric=sensitivity_metric)
+        output_dir=output_dir, df=df)
     
     feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
     
@@ -268,50 +231,30 @@ def main():
                 data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
                 cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
             X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
-            X_train_, y_train_ = ros_run(X_train_, y_train)
+            if ros:
+                X_train_, y_train_ = ros_run(X_train_, y_train)
             
             print('....... Building and evaluating models .......')
-            if sensitivity_metric=='ic50':
-                nn_hb = neural_net_with_hyperband(
-                    X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
-                    step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-                    patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
-                    metadata)
-                rf = random_forest(
-                    X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
-                    plt_confusion=confusion, plt_rocauc=rocauc)
-                ridge = ridge_classifier(
-                    X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
-                    plt_confusion=confusion, plt_rocauc=rocauc)
-                evaluation_df = pd.concat([nn_hb, rf, ridge])
-                evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
-                    'n_correctly_predicted_resistant_cell_lines']
-                evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
+            nn_hb = neural_net_with_hyperband(
+                X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
+                step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
+                patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
+                metadata)
+            rf = random_forest(
+                X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
+                plt_confusion=confusion)
+            ridge = ridge_classifier(
+                X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
+                plt_confusion=confusion)
+            evaluation_df = pd.concat([nn_hb, rf, ridge])
+            evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
+                'n_correctly_predicted_resistant_cell_lines']
+            evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
             
             print('....... Generating evaluation reports ........')
             plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
         stitch_pngs(output_dir, data_type)
-            
-    # else:
-    #     # nn_hb = neural_net_with_hyperband_regression(
-    #     #     X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
-    #     #     step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-    #     #     patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-    #     #     feature_selection, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
-    #     # rf = random_forest_regression(
-    #     #     X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
-    #     #     plt_confusion=confusion, plt_rocauc=rocauc)
-    #     ridge = ridge_regression(
-    #         X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
-    #         plt_confusion=confusion, plt_rocauc=rocauc)
-    #     evaluation_df = ridge
-    #     # elastic = elastic_net(
-    #     #     X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
-    #     #     plt_confusion=confusion, plt_rocauc=rocauc)
-    #     # evaluation_df = pd.concat([nn_hb, rf, ridge, elastic])
-    
-    # print(evaluation_df)
 
 if __name__=='__main__': 
     main()

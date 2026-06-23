@@ -164,20 +164,6 @@ def plot_confusion_matrix(
                     + feature_selection + '.png')
         plt.close()
 
-def plot_rocauc(
-        fpr, tpr, output_dir, feature_selection, model_name):
-    '''
-    Plots ROC AUC and saves as png.
-    '''
-    plt.plot(fpr,tpr)
-    plt.plot([0,1],[0,1],'--')
-    plt.title('ROC AUC ' + model_name + ' ' + feature_selection)
-    plt.xlabel('fpr')
-    plt.ylabel('tpr')
-    plt.savefig(output_dir + '/by_tissue/rocauc/plt_rocauc_' + model_name + '_'
-                + feature_selection + '.png')
-    plt.close()
-
 def stitch_pngs(
         output_dir, data_type):
     '''

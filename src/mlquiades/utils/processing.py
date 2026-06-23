@@ -37,7 +37,7 @@ def cdk4_6_genes(
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
     genes = [x.lower() for x in genes]
     x = pd.DataFrame([x.split('_')[0] for x in df.columns])
-    x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
+    x = df.columns[x.isin(['label', 'cell line', 'tissue'] + genes)[0]]
     df = df.loc[:, x]
 
     return df, genes
@@ -55,12 +55,12 @@ def cdk4_6_cancer_genes(
     df_genes = pd.DataFrame(genes + cancer_genes)
     genes = df_genes.iloc[:,0].unique().tolist()
     x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
-    x = df_.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
+    x = df_.columns[x.isin(['label', 'cell line', 'tissue'] + genes)[0]]
     df_ = df_.loc[:, x]
     return df_
 
 def split_data(
-        output_dir, df, drug_response_metric=None):
+        output_dir, df):
     '''
     Splits data into training, validation and testing datasets. [Splitting
     intentionally includes data from both classes (-1 and 1). Since there is
@@ -69,97 +69,90 @@ def split_data(
     split 60-20-20 within each tissue type.]
     '''
 
-    if drug_response_metric=='ic50':
-        # isolate the data that pertains to the sensitive class
-        df_sensitive = df[df['label']==-1]
-        breast_sensitive = df_sensitive[df_sensitive['Tissue']=='breast']
-        df_sensitive = df_sensitive[df_sensitive['Tissue']!='breast']
-        X_train_sensitive, X_valtest_sensitive, y_train_sensitive, y_valtest_sensitive = train_test_split(
-            df_sensitive, df_sensitive['label'], test_size=.4)
-        X_val_sensitive, X_test_sensitive, y_val_sensitive, y_test_sensitive = train_test_split(
-            X_valtest_sensitive, y_valtest_sensitive, test_size=.5)
-        
-        # isolate the data that pertains to the resistant class
-        X_train_resistant = pd.DataFrame()
-        X_val_resistant = pd.DataFrame()
-        X_test_resistant = pd.DataFrame()
-        y_train_resistant = pd.DataFrame()
-        y_val_resistant = pd.DataFrame()
-        y_test_resistant = pd.DataFrame()
-        df_resistant = df[df['label']==1]
-        breast_resistant = df_resistant[df_resistant['Tissue']=='breast']
-        df_resistant = df_resistant[df_resistant['Tissue']!='breast']
-        
-        # breast cancer samples - split so that you have both classes in train, val and test (if possible)
-        X_train_sensitive_b = pd.DataFrame()
-        X_val_sensitive_b = pd.DataFrame()
-        X_test_sensitive_b = pd.DataFrame()
-        y_train_sensitive_b = pd.DataFrame()
-        y_val_sensitive_b = pd.DataFrame()
-        y_test_sensitive_b = pd.DataFrame()
-        X_train_resistant_b = pd.DataFrame()
-        X_val_resistant_b = pd.DataFrame()
-        X_test_resistant_b = pd.DataFrame()
-        y_train_resistant_b = pd.DataFrame()
-        y_val_resistant_b = pd.DataFrame()
-        y_test_resistant_b = pd.DataFrame()
-        
-        if len(breast_sensitive)>0:
-            X_train_sensitive_b, X_valtest_sensitive_b, y_train_sensitive_b, y_valtest_sensitive_b = train_test_split(
-                breast_sensitive, breast_sensitive['label'], test_size=.4)
-            X_val_sensitive_b, X_test_sensitive_b, y_val_sensitive_b, y_test_sensitive_b = train_test_split(
-                X_valtest_sensitive_b, y_valtest_sensitive_b, test_size=.5)
-        if len(breast_resistant)>0:
-            X_train_resistant_b, X_valtest_resistant_b, y_train_resistant_b, y_valtest_resistant_b = train_test_split(
-                breast_resistant, breast_resistant['label'], test_size=.4)
-            X_val_resistant_b, X_test_resistant_b, y_val_resistant_b, y_test_resistant_b = train_test_split(
-                X_valtest_resistant_b, y_valtest_resistant_b, test_size=.5)
-        
-        for tissue in df_resistant['Tissue'].unique():
-            df_resistant_tissue = df_resistant[df_resistant['Tissue']==tissue]
-            if df_resistant_tissue.shape[0]>3:
-                X_train_tissue, X_valtest_tissue, y_train_tissue, y_valtest_tissue = train_test_split(
-                    df_resistant_tissue, df_resistant_tissue['label'], test_size=.4)
-                X_val_tissue, X_test_tissue, y_val_tissue, y_test_tissue = train_test_split(
-                    X_valtest_tissue, y_valtest_tissue, test_size=.5)
-                
-                X_train_resistant = pd.concat([X_train_resistant, X_train_tissue])
-                X_val_resistant = pd.concat([X_val_resistant, X_val_tissue])
-                X_test_resistant = pd.concat([X_test_resistant, X_test_tissue])
-                y_train_resistant = pd.concat([y_train_resistant, y_train_tissue])
-                y_val_resistant = pd.concat([y_val_resistant, y_val_tissue])
-                y_test_resistant = pd.concat([y_test_resistant, y_test_tissue])
-        
-        X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b])
-        X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b])
-        X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b])
-        y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b])
-        y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b])
-        y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b])
-    else:
-        X_train_, X_valtest, y_train_, y_valtest = train_test_split(
-            df, df['label'], test_size=.4)
-        X_val_, X_test, y_val_, y_test = train_test_split(
-            X_valtest, y_valtest, test_size=.5)
-        # df['label'] = np.random.rand(len(df['label']), 1) # !!!! this is strictly for testing purposes only REMOVE AFTER TESTING
+    # isolate the data that pertains to the sensitive class
+    df_sensitive = df[df['label']==-1]
+    breast_sensitive = df_sensitive[df_sensitive['tissue']=='breast']
+    df_sensitive = df_sensitive[df_sensitive['tissue']!='breast']
+    X_train_sensitive, X_valtest_sensitive, y_train_sensitive, y_valtest_sensitive = train_test_split(
+        df_sensitive, df_sensitive['label'], test_size=.4)
+    X_val_sensitive, X_test_sensitive, y_val_sensitive, y_test_sensitive = train_test_split(
+        X_valtest_sensitive, y_valtest_sensitive, test_size=.5)
     
-    metadata_train = X_train_[['label', 'cell line', 'Tissue']]
-    metadata_val = X_val_[['label', 'cell line', 'Tissue']]
-    metadata_test = X_test[['label', 'cell line', 'Tissue']]
+    # isolate the data that pertains to the resistant class
+    X_train_resistant = pd.DataFrame()
+    X_val_resistant = pd.DataFrame()
+    X_test_resistant = pd.DataFrame()
+    y_train_resistant = pd.DataFrame()
+    y_val_resistant = pd.DataFrame()
+    y_test_resistant = pd.DataFrame()
+    df_resistant = df[df['label']==1]
+    breast_resistant = df_resistant[df_resistant['tissue']=='breast']
+    df_resistant = df_resistant[df_resistant['tissue']!='breast']
+    
+    # breast cancer samples - split so that you have both classes in train, val and test (if possible)
+    X_train_sensitive_b = pd.DataFrame()
+    X_val_sensitive_b = pd.DataFrame()
+    X_test_sensitive_b = pd.DataFrame()
+    y_train_sensitive_b = pd.DataFrame()
+    y_val_sensitive_b = pd.DataFrame()
+    y_test_sensitive_b = pd.DataFrame()
+    X_train_resistant_b = pd.DataFrame()
+    X_val_resistant_b = pd.DataFrame()
+    X_test_resistant_b = pd.DataFrame()
+    y_train_resistant_b = pd.DataFrame()
+    y_val_resistant_b = pd.DataFrame()
+    y_test_resistant_b = pd.DataFrame()
+    
+    if len(breast_sensitive)>0:
+        X_train_sensitive_b, X_valtest_sensitive_b, y_train_sensitive_b, y_valtest_sensitive_b = train_test_split(
+            breast_sensitive, breast_sensitive['label'], test_size=.4)
+        X_val_sensitive_b, X_test_sensitive_b, y_val_sensitive_b, y_test_sensitive_b = train_test_split(
+            X_valtest_sensitive_b, y_valtest_sensitive_b, test_size=.5)
+    if len(breast_resistant)>0:
+        X_train_resistant_b, X_valtest_resistant_b, y_train_resistant_b, y_valtest_resistant_b = train_test_split(
+            breast_resistant, breast_resistant['label'], test_size=.4)
+        X_val_resistant_b, X_test_resistant_b, y_val_resistant_b, y_test_resistant_b = train_test_split(
+            X_valtest_resistant_b, y_valtest_resistant_b, test_size=.5)
+    
+    for tissue in df_resistant['tissue'].unique():
+        df_resistant_tissue = df_resistant[df_resistant['tissue']==tissue]
+        if df_resistant_tissue.shape[0]>3:
+            X_train_tissue, X_valtest_tissue, y_train_tissue, y_valtest_tissue = train_test_split(
+                df_resistant_tissue, df_resistant_tissue['label'], test_size=.4)
+            X_val_tissue, X_test_tissue, y_val_tissue, y_test_tissue = train_test_split(
+                X_valtest_tissue, y_valtest_tissue, test_size=.5)
+            
+            X_train_resistant = pd.concat([X_train_resistant, X_train_tissue])
+            X_val_resistant = pd.concat([X_val_resistant, X_val_tissue])
+            X_test_resistant = pd.concat([X_test_resistant, X_test_tissue])
+            y_train_resistant = pd.concat([y_train_resistant, y_train_tissue])
+            y_val_resistant = pd.concat([y_val_resistant, y_val_tissue])
+            y_test_resistant = pd.concat([y_test_resistant, y_test_tissue])
+    
+    X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b])
+    X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b])
+    X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b])
+    y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b])
+    y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b])
+    y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b])
+
+    metadata_train = X_train_[['label', 'cell line', 'tissue']]
+    metadata_val = X_val_[['label', 'cell line', 'tissue']]
+    metadata_test = X_test[['label', 'cell line', 'tissue']]
     metadata_train['train_val_test'] = 'train'
     metadata_val['train_val_test'] = 'val'
     metadata_test['train_val_test'] = 'test'
     pearson_train = X_train_['for_pearson_calculation']
-    X_train_ = X_train_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
-    X_val_ = X_val_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
-    X_test = X_test.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
+    X_train_ = X_train_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
+    X_val_ = X_val_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
+    X_test = X_test.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
     
     metadata = pd.concat([metadata_train, metadata_val, metadata_test])
     
     grouped = []
     for type in ['train', 'val', 'test']:
-        for tissue in metadata['Tissue'].unique():
-            meta_sub = metadata[metadata['Tissue']==tissue]
+        for tissue in metadata['tissue'].unique():
+            meta_sub = metadata[metadata['tissue']==tissue]
             meta_sub = meta_sub[meta_sub['train_val_test']==type]
             grouped.append([type, tissue, meta_sub['label'].tolist().count(-1),
                             meta_sub['label'].tolist().count(1)])
