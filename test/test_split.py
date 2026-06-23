@@ -24,17 +24,17 @@ def test_split():
         axis=0))
     y_labels = y_labels.rename(columns={0:'label'})
     df_ = pd.concat([df_, y_labels], axis=1)
-    df_['Tissue'] = 'breast'
-    df_['Tissue'][1:20] = 'liver'
-    df_['Tissue'][90:93] = 'liver'
-    df_['Tissue'][21:30]= 'lung'
-    df_['Tissue'][93:96]= 'lung'
+    df_['tissue'] = 'breast'
+    df_['tissue'][1:20] = 'liver'
+    df_['tissue'][90:93] = 'liver'
+    df_['tissue'][21:30]= 'lung'
+    df_['tissue'][93:96]= 'lung'
     df_['cell line'] = np.arange(1, df_.shape[0] + 1)
     df_['for_pearson_calculation'] = np.random.rand(df_.shape[0], 1)
 
     dir_ = 'test/'
     A_1, B_1, C_1, D_1, E_1, F_1, G_1, H_1 = split_data(
-        output_dir=dir_, df=df_, drug_response_metric='ic50')
+        output_dir=dir_, df=df_)
     
     assert A_1.shape[0] + C_1.shape[0] + E_1.shape[0] == df_.shape[0]
     assert ['data_split.png' in os.listdir('test/')]
