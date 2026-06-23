@@ -1,5 +1,5 @@
 # mlquiades
-*2026/06/18*
+*2026/06/22*
 
 (pronounced *em-el-kee-ah-days*)
 
@@ -31,12 +31,12 @@ If you use a different package manager, install packages to your environment fro
 If using uv
 ```
 uv python pin 3.10
-uv run src/mlquiades/main.py --a sample_data --b test --c tpm_palb_rib_with_metadata.csv --o 5 --r gex --s cdk4_6_genes.txt --t cancer_genes.tsv --u palbociclib --v gdsc1 --w ic50
+uv run src/mlquiades/main.py --a sample_data --b output_dir
 ```
 
 If not using uv
 ```
-python src/mlquiades/main.py --a sample_data --b test --c tpm_palb_rib_with_metadata.csv --o 5 --r gex --s cdk4_6_genes.txt --t cancer_genes.tsv --u palbociclib --v gdsc1 --w ic50 --x 5
+python src/mlquiades/main.py --a sample_data --b output_dir
 ```
 
 ## Output
