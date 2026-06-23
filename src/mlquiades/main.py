@@ -156,10 +156,6 @@ def main():
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
-    if data_type not in ['gex', 'isoforms', 'both']:
-        raise TypeError('The data_type (option -r) is incorrect. Please supply either gex, isoforms, \
-                        or both')
-    
     print('....... Reading in data ......................')
     
     df = pd.read_csv(data_dir + '/gex_palbociclib.csv')
