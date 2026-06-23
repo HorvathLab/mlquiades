@@ -128,13 +128,6 @@ def params():
         dest='confusion',
         default=False,
         help='plot confusion matrices for individual tissue types (optional)')
-    parser.add_argument(
-        '--t',
-        type=str,
-        action='store',
-        dest='data_type',
-        default='both',
-        help='The data type going into the model. Options include: gex, isoforms, both.')
 
     return parser
 
@@ -155,7 +148,6 @@ def main():
     epochs = args.epochs
     learning_rate_min = args.learning_rate_min
     learning_rate_max = args.learning_rate_max
-    data_type = args.data_type
     confusion = args.confusion
     max_layers = args.max_layers
     cdk4_6_filename = 'cdk4_6_genes.txt'
@@ -170,14 +162,9 @@ def main():
     
     print('....... Reading in data ......................')
     
-    if data_type == 'gex':
-        df = pd.read_csv(data_dir + '/gex_palbociclib.csv')
-    elif data_type == 'isoforms':
-        df = pd.read_csv(data_dir + '/isoforms_palbociclib.csv')
-    else:
-        df = pd.read_csv(data_dir + '/gex_palbociclib.csv')
-        df2 = pd.read_csv(data_dir + '/isoforms_palbociclib.csv')
-        df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
+    df = pd.read_csv(data_dir + '/gex_palbociclib.csv')
+    df2 = pd.read_csv(data_dir + '/isoforms_palbociclib.csv')
+    df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
     
     df['for_pearson_calculation'] = df['ic50']
     df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
