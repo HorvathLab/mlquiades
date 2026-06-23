@@ -56,7 +56,7 @@ def neural_net_with_hyperband(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
         step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
         patience, min_delta, epochs, learning_rate_min, learning_rate_max,
-        max_layers, metadata):
+        max_layers, metadata, plt_confusion=False):
     '''
     Builds hyperband-tuned neural net using keras. Fits the model to the randomly
     oversampled training data. Makes predictions on the testing dataset. Plots
@@ -193,8 +193,8 @@ def ridge_classifier(
                 acc, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 zeros, ones = counter(y_test_tissue['label'], y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, 
-                                          feature_selection,
+                    plot_confusion_matrix(
+                        y_test_tissue['label'], y_pred, output_dir, feature_selection,
                                         model_name='ridge_classification_' + tissue, nn=False)
                 evaluation_df.append(['ridge_classification', tissue, acc, rocauc, zeros, ones])
             else:

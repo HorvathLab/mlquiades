@@ -25,18 +25,6 @@ def params():
         default='output',
         help='output folder name (optional)')
     parser.add_argument(
-        '--c',
-        type=str,
-        action='store',
-        dest='data_filename',
-        help='data filename (required)')
-    parser.add_argument(
-        '--cc',
-        type=str,
-        action='store',
-        dest='data_filename_2',
-        help='data filename 2 (optional)')
-    parser.add_argument(
         '--d',
         type=bool,
         action='store',
@@ -128,30 +116,25 @@ def params():
         '(optional)')
     parser.add_argument(
         '--r',
-        type=str,
-        action='store',
-        dest='data_type',
-        default='both',
-        help='The data type going into the model. Options include: gex, isoforms, both.')
-    parser.add_argument(
-        '--s',
-        type=str,
-        action='store',
-        dest='cdk4_6_genes_filename',
-        help='filename for cdk4 and cdk6 genes for the feature selection option cdk4_6_genes')
-    parser.add_argument(
-        '--t',
-        type=str,
-        action='store',
-        dest='cancer_genes_filename',
-        help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes')
-    parser.add_argument(
-        '--u',
         type=int,
         action='store',
         dest='max_layers',
         default=20,
         help='the maximum number of layers for the neural net hyperband parameter tuning (optional)')
+    parser.add_argument(
+        '--s',
+        type=str,
+        action='store',
+        dest='confusion',
+        default=False,
+        help='plot confusion matrices for individual tissue types (optional)')
+    parser.add_argument(
+        '--t',
+        type=str,
+        action='store',
+        dest='data_type',
+        default='both',
+        help='The data type going into the model. Options include: gex, isoforms, both.')
 
     return parser
 
@@ -160,8 +143,6 @@ def main():
     args = parser.parse_args()
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
-    data_filename = args.data_filename
-    data_filename_2 = args.data_filename_2
     confusion = args.confusion
     ros = args.ros
     step_size_nodes = args.step_size_nodes
@@ -175,9 +156,10 @@ def main():
     learning_rate_min = args.learning_rate_min
     learning_rate_max = args.learning_rate_max
     data_type = args.data_type
-    cdk4_6_filename = args.cdk4_6_genes_filename
-    cancer_genes_filename = args.cancer_genes_filename
+    confusion = args.confusion
     max_layers = args.max_layers
+    cdk4_6_filename = 'cdk4_6_genes.txt'
+    cancer_genes_filename = 'cancer_genes.tsv'
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
@@ -187,13 +169,15 @@ def main():
                         or both')
     
     print('....... Reading in data ......................')
-    df = pd.read_csv(data_dir + data_filename)
-    if data_type in ['isoforms', 'both']:
-        if data_filename_2 == None:
-            raise TypeError('Please provide the isoform file as part of option -cc')
-        if data_filename_2 != None:
-            df2 = pd.read_csv(data_dir + data_filename_2)
-            df = df.merge(df2.iloc[:, 16:], left_index=True, right_index=True, how='inner')
+    
+    if data_type == 'gex':
+        df = pd.read_csv(data_dir + '/gex_palbociclib.csv')
+    elif data_type == 'isoforms':
+        df = pd.read_csv(data_dir + '/isoforms_palbociclib.csv')
+    else:
+        df = pd.read_csv(data_dir + '/gex_palbociclib.csv')
+        df2 = pd.read_csv(data_dir + '/isoforms_palbociclib.csv')
+        df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
     
     df['for_pearson_calculation'] = df['ic50']
     df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
@@ -203,24 +187,11 @@ def main():
         output_dir=output_dir, df=df)
     
     feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
+    datatypes_searchsymbols = [(['gex'], ['ensg']), (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
     
-    if data_type == 'both':
-        data_types = ['gex', 'isoforms']
-    elif data_type == 'gex':
-        data_types = ['gex']
-    elif data_type == 'isoforms':
-        data_types = ['isoforms']
-    
-    for data_type in data_types:
-        if data_type == ['gex']:
-            search_symbol = ['ensg']
-        elif data_type == ['isoforms']:
-            search_symbol = ['enst']
-        else:
-            search_symbol = ['ensg', 'enst']
-        
+    for data_type, search_symbol in datatypes_searchsymbols:
         for feature_select in feature_selections:
-            output_dir_feature = output_dir + '/' + feature_select + '_' + data_type
+            output_dir_feature = output_dir + '/' + feature_select + '_' + data_type[0]
             X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
             X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
             X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
@@ -239,7 +210,7 @@ def main():
                 X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
                 step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
                 patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
-                metadata)
+                metadata, plt_confusion=confusion)
             rf = random_forest(
                 X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
                 plt_confusion=confusion)
@@ -254,7 +225,7 @@ def main():
             print('....... Generating evaluation reports ........')
             plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
-        stitch_pngs(output_dir, data_type)
+        stitch_pngs(output_dir, data_type[0])
 
 if __name__=='__main__': 
     main()
