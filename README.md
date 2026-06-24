@@ -49,6 +49,12 @@ python src/mlquiades/main.py --a sample_data --b output_dir
 
 ```
 └── output
+    ├── cdk4_6_cancer_both
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_cdk4_6_cancer.png
+    │   └── plt_rocauc_all_cdk4_6_cancer.png
     ├── cdk4_6_cancer_gex
     │   ├── evaluation_df_acc.csv
     │   ├── evaluation_df.csv
@@ -61,6 +67,12 @@ python src/mlquiades/main.py --a sample_data --b output_dir
     │   ├── evaluation_df_rocauc.csv
     │   ├── plt_accuracy_all_cdk4_6_cancer.png
     │   └── plt_rocauc_all_cdk4_6_cancer.png
+    ├── cdk4_6_genes_both
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_cdk4_6_genes.png
+    │   └── plt_rocauc_all_cdk4_6_genes.png
     ├── cdk4_6_genes_gex
     │   ├── evaluation_df_acc.csv
     │   ├── evaluation_df.csv
@@ -75,6 +87,12 @@ python src/mlquiades/main.py --a sample_data --b output_dir
     │   └── plt_rocauc_all_cdk4_6_genes.png
     ├── data_split.csv
     ├── data_split.png
+    ├── pearson_both
+    │   ├── evaluation_df_acc.csv
+    │   ├── evaluation_df.csv
+    │   ├── evaluation_df_rocauc.csv
+    │   ├── plt_accuracy_all_pearson.png
+    │   └── plt_rocauc_all_pearson.png
     ├── pearson_gex
     │   ├── evaluation_df_acc.csv
     │   ├── evaluation_df.csv
@@ -87,6 +105,8 @@ python src/mlquiades/main.py --a sample_data --b output_dir
     │   ├── evaluation_df_rocauc.csv
     │   ├── plt_accuracy_all_pearson.png
     │   └── plt_rocauc_all_pearson.png
+    ├── report_both.html
+    ├── report_both.md
     ├── report_gex.html
     ├── report_gex.md
     ├── report_isoforms.html
