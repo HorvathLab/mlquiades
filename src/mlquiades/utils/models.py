@@ -56,7 +56,7 @@ def neural_net_with_hyperband(
         X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
         step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
         patience, min_delta, epochs, learning_rate_min, learning_rate_max,
-        max_layers, metadata, plt_confusion=False):
+        max_layers, metadata, output_dir, plt_confusion=False):
     '''
     Builds hyperband-tuned neural net using keras. Fits the model to the randomly
     oversampled training data. Makes predictions on the testing dataset. Plots
@@ -104,8 +104,9 @@ def neural_net_with_hyperband(
                                                        )
                 zeros, ones = counter(y_test_tissue['label'], y_pred, nn=True)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir, feature_selection,
-                                        model_name='nn_hb_' + tissue, nn=False)
+                    plot_confusion_matrix(
+                        y_test_tissue['label'], y_pred, output_dir=output_dir,
+                        model_name='nn_hb_' + tissue, nn=False)
                 evaluation_df.append(['nn_hb', tissue, acc, rocauc, zeros, ones])
             else:
                 loss, acc = best_model.evaluate(X_test_tissue, y_test_tissue)
@@ -120,8 +121,8 @@ def neural_net_with_hyperband(
     evaluation_df.append(['nn_hb', 'all_tissues', acc, rocauc, zeros, ones])
     
     if plt_confusion:
-        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
-                            model_name='nn_hb', nn=True)
+        plot_confusion_matrix(
+            y_test['label'], y_pred, output_dir, model_name='nn_hb', nn=True)
     
     return pd.DataFrame(evaluation_df)
 
@@ -151,7 +152,7 @@ def random_forest(
                 if plt_confusion:
                     plot_confusion_matrix(
                         y_test_tissue['label'], y_pred, output_dir,
-                        feature_selection, model_name='rf_' + tissue, nn=False)
+                        model_name='rf_' + tissue, nn=False)
                 evaluation_df.append(['rf', tissue, acc, rocauc, zeros, ones])
             else:
                 acc = metrics.accuracy_score(y_test_tissue, y_pred)
@@ -165,8 +166,8 @@ def random_forest(
     evaluation_df.append(['rf', 'all_tissues', acc, rocauc, zeros, ones])
     
     if plt_confusion:
-        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
-                              model_name='rf', nn=False)
+        plot_confusion_matrix(
+            y_test['label'], y_pred, output_dir, model_name='rf', nn=False)
     
     return pd.DataFrame(evaluation_df)
 
@@ -194,7 +195,7 @@ def ridge_classifier(
                 zeros, ones = counter(y_test_tissue['label'], y_pred)
                 if plt_confusion:
                     plot_confusion_matrix(
-                        y_test_tissue['label'], y_pred, output_dir, feature_selection,
+                        y_test_tissue['label'], y_pred, output_dir,
                         model_name='ridge_classification_' + tissue, nn=False)
                 evaluation_df.append(['ridge_classification', tissue, acc, rocauc, zeros, ones])
             else:
@@ -209,7 +210,7 @@ def ridge_classifier(
     evaluation_df.append(['ridge_classification', 'all_tissues', acc, rocauc, zeros, ones])
     
     if plt_confusion:
-        plot_confusion_matrix(y_test['label'], y_pred, output_dir, feature_selection,
-                              model_name='ridge_classification', nn=False)
+        plot_confusion_matrix(
+            y_test['label'], y_pred, output_dir, model_name='ridge_classification', nn=False)
     
     return pd.DataFrame(evaluation_df)
