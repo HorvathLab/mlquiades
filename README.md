@@ -1,5 +1,5 @@
 # mlquiades
-*2026/06/22*
+*2026/06/24*
 
 (pronounced *em-el-kee-ah-days*)
 
@@ -22,6 +22,12 @@ cd mlquiades
 uv venv
 # activate the venv: your command may differ for a different shell
 source .venv/bin/activate
+```
+
+## Download Data
+
+```
+wget zenodo #### sample_data
 ```
 
 If you use a different package manager, install packages to your environment from `pyproject.toml`
