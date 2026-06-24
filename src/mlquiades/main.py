@@ -158,8 +158,8 @@ def main():
         
     print('....... Reading in data ......................')
     
-    df = pd.read_csv(data_dir + '/gex_palbociclib.csv')
-    df2 = pd.read_csv(data_dir + '/isoforms_palbociclib.csv')
+    df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
+    df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
     df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
     
     df['for_pearson_calculation'] = df['ic50']
@@ -213,8 +213,8 @@ def main():
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
         stitch_pngs(output_dir, data_type[0])
         
-    if os.path.isfile(data_dir + '/orchid.txt'):
-        f = open(data_dir + '/orchid.txt', 'r')
+    if os.path.isfile(data_dir + 'orchid.txt'):
+        f = open(data_dir + 'orchid.txt', 'r')
         file_contents = f.read()
         print(file_contents)
         f.close()
