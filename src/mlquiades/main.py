@@ -197,11 +197,11 @@ def main():
                 patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
                 metadata, output_dir=output_dir, plt_confusion=confusion)
             rf = random_forest(
-                X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
-                output_dir=output_dir, plt_confusion=confusion)
+                X_train_, y_train_, X_test, y_test, output_dir=output_dir, metadata=metadata,
+                plt_confusion=confusion)
             ridge = ridge_classifier(
-                X_train_, y_train_, X_test, y_test, output_dir_feature, feature_select, metadata,
-                output_dir=output_dir, plt_confusion=confusion)
+                X_train_, y_train_, X_test, y_test, output_dir=output_dir, metadata=metadata,
+                plt_confusion=confusion)
             evaluation_df = pd.concat([nn_hb, rf, ridge])
             evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
                 'n_correctly_predicted_resistant_cell_lines']

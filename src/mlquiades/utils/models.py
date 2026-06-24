@@ -127,7 +127,7 @@ def neural_net_with_hyperband(
     return pd.DataFrame(evaluation_df)
 
 def random_forest(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
+        X_train_ros, y_train_ros, X_test, y_test, output_dir,
         metadata, max_depth=2, random_state=0, plt_confusion=False):
     '''
     Builds random forest model. Fits the model to the randomly oversampled
@@ -172,7 +172,7 @@ def random_forest(
     return pd.DataFrame(evaluation_df)
 
 def ridge_classifier(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection,
+        X_train_ros, y_train_ros, X_test, y_test, output_dir,
         metadata, plt_confusion=False):
     '''
     Builds ridge classifier model. Fits the model to the randomly oversampled
