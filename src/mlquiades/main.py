@@ -121,13 +121,6 @@ def params():
         dest='max_layers',
         default=20,
         help='the maximum number of layers for the neural net hyperband parameter tuning (optional)')
-    parser.add_argument(
-        '--s',
-        type=str,
-        action='store',
-        dest='confusion',
-        default=False,
-        help='plot confusion matrices for individual tissue types (optional)')
 
     return parser
 
