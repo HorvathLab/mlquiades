@@ -99,14 +99,13 @@ def neural_net_with_hyperband(
         if X_test_tissue.shape[0]>0:
             y_pred = best_model.predict(X_test_tissue)
             if len(y_test_tissue['label'].unique())>1:          
-                acc, rocauc, fpr, tpr = evaluate_keras(best_model, X_test_tissue,
-                                                       y_test_tissue['label'], y_pred,
-                                                       )
+                acc, rocauc, fpr, tpr = evaluate_keras(
+                    best_model, X_test_tissue, y_test_tissue['label'], y_pred)
                 zeros, ones = counter(y_test_tissue['label'], y_pred, nn=True)
                 if plt_confusion:
                     plot_confusion_matrix(
                         y_test_tissue['label'], y_pred, output_dir=output_dir,
-                        model_name='nn_hb_' + tissue, nn=False)
+                        model_name='nn_hb_' + tissue, nn=True)
                 evaluation_df.append(['nn_hb', tissue, acc, rocauc, zeros, ones])
             else:
                 loss, acc = best_model.evaluate(X_test_tissue, y_test_tissue)
