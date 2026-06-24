@@ -149,9 +149,9 @@ def random_forest(
                 acc, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
                 zeros, ones = counter(y_test_tissue['label'], y_pred)
                 if plt_confusion:
-                    plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir,
-                                          feature_selection,
-                                        model_name='rf_' + tissue, nn=False)
+                    plot_confusion_matrix(
+                        y_test_tissue['label'], y_pred, output_dir,
+                        feature_selection, model_name='rf_' + tissue, nn=False)
                 evaluation_df.append(['rf', tissue, acc, rocauc, zeros, ones])
             else:
                 acc = metrics.accuracy_score(y_test_tissue, y_pred)
@@ -195,7 +195,7 @@ def ridge_classifier(
                 if plt_confusion:
                     plot_confusion_matrix(
                         y_test_tissue['label'], y_pred, output_dir, feature_selection,
-                                        model_name='ridge_classification_' + tissue, nn=False)
+                        model_name='ridge_classification_' + tissue, nn=False)
                 evaluation_df.append(['ridge_classification', tissue, acc, rocauc, zeros, ones])
             else:
                 acc = metrics.accuracy_score(y_test_tissue, y_pred)
