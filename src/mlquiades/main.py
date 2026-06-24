@@ -156,7 +156,7 @@ def main():
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     if confusion:
-        os.mkdir(output_dir + 'confusion')
+        os.mkdir(output_dir + '/confusion')
 
     print('....... Reading in data ......................')
     
