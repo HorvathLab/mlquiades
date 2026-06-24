@@ -152,13 +152,13 @@ def plot_confusion_matrix(
     if not nn:
         ConfusionMatrixDisplay.from_predictions(
             np.array([y_test.astype(np.float32)]).T,
-            (y_pred).astype(int),display_labels=[0,1])
+            (y_pred).astype(int), display_labels=[0,1])
         plt.savefig(output_dir + '/confusion/plt_confusion_' + model_name + '.png')
         plt.close()
     else:
         ConfusionMatrixDisplay.from_predictions(
-            np.array([y_test.replace(-1,0).astype(np.float32)]).T,
-            (y_pred>=.5).astype(int),display_labels=[0,1])
+            np.array([y_test.astype(np.float32)]).T,
+            (y_pred>=.5).astype(int), display_labels=[0,1])
         plt.savefig(output_dir + '/confusion/plt_confusion_' + model_name + '.png')
         plt.close()
 
