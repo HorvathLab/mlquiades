@@ -213,11 +213,11 @@ def main():
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
         stitch_pngs(output_dir, data_type[0])
         
-        if os.path.isfile(data_dir + '/orchid.txt'):
-            f = open(data_dir + '/orchid.txt', 'r')
-            file_contents = f.read()
-            print(file_contents)
-            f.close()
+    if os.path.isfile(data_dir + '/orchid.txt'):
+        f = open(data_dir + '/orchid.txt', 'r')
+        file_contents = f.read()
+        print(file_contents)
+        f.close()
 
 if __name__=='__main__': 
     main()
