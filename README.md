@@ -42,6 +42,7 @@ uv run src/mlquiades/main.py --a sample_data --b output_dir
 
 If not using uv
 ```
+pip install -e .
 python src/mlquiades/main.py --a sample_data --b output_dir
 ```
 
