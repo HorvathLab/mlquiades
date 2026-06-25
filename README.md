@@ -19,9 +19,6 @@ Ubuntu and MacOS are supported. Windows is not currently supported.
 git init
 git clone git@github.com:HorvathLab/mlquiades.git
 cd mlquiades
-uv venv
-# activate the venv: your command may differ for a different shell
-source .venv/bin/activate
 ```
 
 ## Download Data
@@ -36,6 +33,9 @@ If you use a different package manager, install packages to your environment fro
 
 If using uv
 ```
+uv venv
+# activate the venv: your command may differ for a different shell
+source .venv/bin/activate
 uv python pin 3.10
 uv run src/mlquiades/main.py --a sample_data --b output_dir
 ```
