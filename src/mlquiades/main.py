@@ -44,32 +44,28 @@ def params():
         action='store',
         dest='step_size_nodes',
         default=5,
-        help='step size for nodes in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='step size for nodes in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--i',
         type=int,
         action='store',
         dest='min_nodes',
         default=5,
-        help='minimum number of nodes in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='minimum number of nodes in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--j',
         type=int,
         action='store',
         dest='max_nodes',
         default=512,
-        help='maximum number of nodes in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='maximum number of nodes in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--k',
         type=int,
         action='store',
         dest='max_trials',
         default=10,
-        help='maximum number of trials in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='maximum number of trials in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--l',
         type=int,
@@ -104,16 +100,14 @@ def params():
         action='store',
         dest='learning_rate_min',
         default=1e-4,
-        help='learning rate minimum in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='learning rate minimum in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--q',
         type=float,
         action='store',
         dest='learning_rate_max',
         default=1e-2,
-        help='learning rate maximum in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='learning rate maximum in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--r',
         type=int,
