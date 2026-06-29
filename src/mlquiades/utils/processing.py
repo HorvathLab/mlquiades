@@ -154,10 +154,11 @@ def split_data(
         for tissue in metadata['tissue'].unique():
             meta_sub = metadata[metadata['tissue']==tissue]
             meta_sub = meta_sub[meta_sub['train_val_test']==type]
-            grouped.append([type, tissue, meta_sub['label'].tolist().count(-1),
+            grouped.append([type, tissue, ','.join(meta_sub['cell line'].tolist()),
+                            meta_sub['label'].tolist().count(-1),
                             meta_sub['label'].tolist().count(1)])
 
-    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'sensitive', 
+    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'cell lines', 'tissue', 'sensitive', 
                                              'resistant'])
     grouped.to_csv(output_dir + '/data_split.csv', index=False)
     grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive',
