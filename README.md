@@ -1,9 +1,9 @@
 # mlquiades
-*2026/06/24*
+*2026/06/29*
 
 (pronounced *em-el-kee-ah-days*)
 
-This package takes in bulk RNA cancer cell line sequencing (processed from raw fastqs to TPM counts using STAR) data and GDSC1 and GDSC2 IC50 drug sensitivity scores for palbociclib to build and evaluate three machine learning models.
+This package takes in bulk RNA cancer cell line sequencing (processed from raw fastqs to TPM counts using STAR) data and GDSC1 IC50 drug sensitivity scores for palbociclib to build and evaluate three machine learning models.
 
 These models include: neural net with hyperband, random forest, and ridge classifier.
 
@@ -24,7 +24,7 @@ cd mlquiades
 ## Download Data
 
 ```
-wget zenodo #### sample_data
+wget https://zenodo.org/api/records/21043540/files/palbociclib_gex_isos.tar
 ```
 
 If you use a different package manager, install packages to your environment from `pyproject.toml`
