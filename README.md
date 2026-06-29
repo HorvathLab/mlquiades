@@ -24,7 +24,8 @@ cd mlquiades
 ## Download Data
 
 ```
-wget https://zenodo.org/api/records/21043540/files/palbociclib_gex_isos.tar
+wget -P sample_data https://zenodo.org/api/records/21043540/files/palbociclib_gex_isos.tar
+tar -xvzf sample_data/palbociclib_gex_isos.tar -C sample_data
 ```
 
 If you use a different package manager, install packages to your environment from `pyproject.toml`
