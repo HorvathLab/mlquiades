@@ -53,11 +53,12 @@ def cdk4_6_cancer_genes(
     cancer_genes = [x.lower() for x in cancer_genes]
     df_, genes = cdk4_6_genes(data_dir, df, cdk4_6_genes_filename)
     df_genes = pd.DataFrame(genes + cancer_genes)
-    genes = df_genes.iloc[:,0].unique().tolist()
-    x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
-    x = df_.columns[x.isin(['label', 'cell line', 'tissue'] + genes)[0]]
-    df_ = df_.loc[:, x]
-    return df_
+    genes = df_genes.iloc[:, 0].unique().tolist()
+    x = pd.DataFrame([x.split('_')[0] for x in df.columns])
+    x = df.columns[x.isin(['label', 'cell line', 'tissue'] + genes)[0]]
+    df = df.loc[:, x]
+    
+    return df
 
 def split_data(
         output_dir, df):
@@ -192,16 +193,19 @@ def select_features(
         X_train_, genes = cdk4_6_genes(data_dir, X_train_, cdk4_6_genes_filename)
         X_val_, genes = cdk4_6_genes(data_dir, X_val_, cdk4_6_genes_filename)
         X_test, genes = cdk4_6_genes(data_dir, X_test, cdk4_6_genes_filename)
-    elif feature_selection == 'cdk4_6_cancer_genes':
-        X_train_ = cdk4_6_cancer_genes(data_dir=data_dir, df=X_train_,
-                                 cdk4_6_genes_filename=cdk4_6_genes_filename,
-                                 cancer_genes_filename=cancer_genes_filename)
-        X_val_ = cdk4_6_cancer_genes(data_dir=data_dir, df=X_val_,
-                                 cdk4_6_genes_filename=cdk4_6_genes_filename,
-                                 cancer_genes_filename=cancer_genes_filename)
-        X_test = cdk4_6_cancer_genes(data_dir=data_dir, df=X_test,
-                                 cdk4_6_genes_filename=cdk4_6_genes_filename,
-                                 cancer_genes_filename=cancer_genes_filename)
+    elif feature_selection == 'cdk4_6_cancer':
+        X_train_ = cdk4_6_cancer_genes(
+            data_dir=data_dir, df=X_train_,
+            cdk4_6_genes_filename=cdk4_6_genes_filename,
+            cancer_genes_filename=cancer_genes_filename)
+        X_val_ = cdk4_6_cancer_genes(
+            data_dir=data_dir, df=X_val_,
+            cdk4_6_genes_filename=cdk4_6_genes_filename,
+            cancer_genes_filename=cancer_genes_filename)
+        X_test = cdk4_6_cancer_genes(
+            data_dir=data_dir, df=X_test,
+            cdk4_6_genes_filename=cdk4_6_genes_filename,
+            cancer_genes_filename=cancer_genes_filename)
     elif feature_selection == 'pearson':
         X_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test, pearson_train)
     
