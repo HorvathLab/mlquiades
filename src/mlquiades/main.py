@@ -144,11 +144,9 @@ def main():
         os.mkdir(output_dir)
         
     print('....... Reading in data ......................')
-    
     df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
     df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
     df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
-    
     df['for_pearson_calculation'] = df['ic50']
     df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
     
@@ -165,19 +163,20 @@ def main():
             X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
             X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
             X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
+
             if not os.path.isdir(output_dir_feature):
                 os.mkdir(output_dir_feature)
             if confusion:
                 os.mkdir(output_dir_feature + '/confusion')
-
             
             X_train_, X_val_, X_test = select_features(
                 data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
                 cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
             X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
+            
             if ros:
                 X_train_, y_train_ = ros_run(X_train_, y_train)
-            
+
             print('....... Building and evaluating models .......')
             nn_hb = neural_net_with_hyperband(
                 X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
@@ -198,6 +197,7 @@ def main():
             print('....... Generating evaluation reports ........')
             plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
+            
         stitch_pngs(output_dir, data_type[0])
         
     if os.path.isfile(data_dir + 'orchid.txt'):

@@ -86,6 +86,7 @@ def split_data(
     y_train_resistant = pd.DataFrame()
     y_val_resistant = pd.DataFrame()
     y_test_resistant = pd.DataFrame()
+    leftover_resistant = pd.DataFrame()
     df_resistant = df[df['label']==1]
     breast_resistant = df_resistant[df_resistant['tissue']=='breast']
     df_resistant = df_resistant[df_resistant['tissue']!='breast']
@@ -122,20 +123,32 @@ def split_data(
                 df_resistant_tissue, df_resistant_tissue['label'], test_size=.4)
             X_val_tissue, X_test_tissue, y_val_tissue, y_test_tissue = train_test_split(
                 X_valtest_tissue, y_valtest_tissue, test_size=.5)
-            
             X_train_resistant = pd.concat([X_train_resistant, X_train_tissue])
             X_val_resistant = pd.concat([X_val_resistant, X_val_tissue])
             X_test_resistant = pd.concat([X_test_resistant, X_test_tissue])
             y_train_resistant = pd.concat([y_train_resistant, y_train_tissue])
             y_val_resistant = pd.concat([y_val_resistant, y_val_tissue])
             y_test_resistant = pd.concat([y_test_resistant, y_test_tissue])
+        else:
+            leftover_resistant = pd.concat([leftover_resistant, df_resistant_tissue])
+    if leftover_resistant.shape[0]>0:
+        X_train_leftover, X_valtest_leftover, y_train_leftover, y_valtest_leftover = train_test_split(
+            leftover_resistant, leftover_resistant['label'], test_size=.4)
+        X_val_leftover, X_test_leftover, y_val_leftover, y_test_leftover = train_test_split(
+            X_valtest_leftover, y_valtest_leftover, test_size=.5)
     
-    X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b])
-    X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b])
-    X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b])
-    y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b])
-    y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b])
-    y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b])
+    X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b,
+                          X_train_leftover])
+    X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b,
+                        X_val_leftover])
+    X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b,
+                        X_test_leftover])
+    y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b,
+                          y_train_leftover])
+    y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b,
+                        y_val_leftover])
+    y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b,
+                        y_test_leftover])
 
     metadata_train = X_train_[['label', 'cell line', 'tissue']]
     metadata_val = X_val_[['label', 'cell line', 'tissue']]
@@ -149,7 +162,6 @@ def split_data(
     X_test = X_test.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
     
     metadata = pd.concat([metadata_train, metadata_val, metadata_test])
-    
     grouped = []
     for type in ['train', 'val', 'test']:
         for tissue in metadata['tissue'].unique():
@@ -159,7 +171,7 @@ def split_data(
                             meta_sub['label'].tolist().count(-1),
                             meta_sub['label'].tolist().count(1)])
 
-    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'cell lines', 'tissue', 'sensitive', 
+    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'cell lines', 'sensitive', 
                                              'resistant'])
     grouped.to_csv(output_dir + '/data_split.csv', index=False)
     grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive',
