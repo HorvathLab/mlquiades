@@ -1,13 +1,13 @@
 # mlquiades
-*2026/06/29*
+*2026/07/13*
 
 (pronounced *em-el-kee-ah-days*)
 
 This package takes in bulk RNA cancer cell line sequencing (processed from raw fastqs to TPM counts using STAR) data and GDSC1 IC50 drug sensitivity scores for palbociclib to build and evaluate three machine learning models.
 
-These models include: neural net with hyperband, random forest, and ridge classifier.
+These models include: neural net with hyperband tuning, random forest (ensemble), ridge classifier (L2 regularization), and SVM (L1 regularization).
 
-There are avenues for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes (COSMIC); and a Pearson correlation method that keeps only the genes that have rho>=.3 value with the IC50 score in the training dataset only.
+There are avenues for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes with well-known somatic mutations (COSMIC); and a Pearson correlation method that keeps only the genes that have rho>=.3 value with the IC50 score in the training dataset only.
 
 <img src='https://github.com/HorvathLab/mlquiades/blob/e8f528ef838218006ed4c53166f81352a3738482/output/all_tissues/plt_accuracy_all_cdk4_6_genes.png' width=100% height=100%>
 
