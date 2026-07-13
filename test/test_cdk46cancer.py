@@ -3,10 +3,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-dir_ = os.path.dirname(os.path.abspath('src/mlquiades/utils/preprocessing.py'))
-sys.path.append(dir_)
-
-from processing import cdk4_6_genes, cdk4_6_cancer_genes
+from src.mlquiades.utils.processing import *
 
 def test_cdk46cancer():
     '''
@@ -21,10 +18,10 @@ def test_cdk46cancer():
     
     genes = pd.read_csv(data_dir + file_cdk46, header=None).iloc[:,0].to_list()
     genes.append('a')
+    genes = [x.lower() for x in genes]
     df = pd.DataFrame(np.ones((4, len(genes))), columns = genes)
 
     A, B = cdk4_6_genes(data_dir, df, file_cdk46)
     C = cdk4_6_cancer_genes(data_dir, df, file_cdk46, file_cancer)
     
     assert A.shape[1] <= C.shape[1]
-

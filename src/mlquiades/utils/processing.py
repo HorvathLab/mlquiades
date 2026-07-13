@@ -37,7 +37,7 @@ def cdk4_6_genes(
     genes = pd.read_csv(data_dir + genes_file, header=None).iloc[:,0].to_list()
     genes = [x.lower() for x in genes]
     x = pd.DataFrame([x.split('_')[0] for x in df.columns])
-    x = df.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
+    x = df.columns[x.isin(['label', 'cell line', 'tissue'] + genes)[0]]
     df = df.loc[:, x]
 
     return df, genes
@@ -53,37 +53,27 @@ def cdk4_6_cancer_genes(
     cancer_genes = [x.lower() for x in cancer_genes]
     df_, genes = cdk4_6_genes(data_dir, df, cdk4_6_genes_filename)
     df_genes = pd.DataFrame(genes + cancer_genes)
-    genes = df_genes.iloc[:,0].unique().tolist()
-    x = pd.DataFrame([x.split('_')[0] for x in df_.columns])
-    x = df_.columns[x.isin(['label', 'cell line', 'Tissue'] + genes)[0]]
-    df_ = df_.loc[:, x]
-    print(df_)
-    return df_
+    genes = df_genes.iloc[:, 0].unique().tolist()
+    x = pd.DataFrame([x.split('_')[0] for x in df.columns])
+    x = df.columns[x.isin(['label', 'cell line', 'tissue'] + genes)[0]]
+    df = df.loc[:, x]
+    
+    return df
 
-def split_scale_data(
-        data_dir, output_dir, df, feature_selection, ros=True, 
-        cdk4_6_genes_filename=None, cancer_genes_filename=None):
+def split_data(
+        output_dir, df):
     '''
-    Performs feature selection (3 options) and splits data into training,
-    validation and testing datasets. [Splitting intentionally includes
-    data from both classes (-1 and 1). Since there is a class imbalance
-    and 100 of the samples are sensitive, the split is 60-20-20 for the
-    samples in that class. The remaining samples are also split 60-20-20
-    within each tissue type.] Scales and normalizes the training,
-    validation and testing datasets. Performs random oversampling on the
-    training dataset only.
+    Splits data into training, validation and testing datasets. [Splitting
+    intentionally includes data from both classes (-1 and 1). Since there is
+    a class imbalance and 100 of the samples are sensitive, the split is
+    60-20-20 for the samples in that class. The remaining samples are also
+    split 60-20-20 within each tissue type.]
     '''
-    if feature_selection == 'cdk4_6_genes':
-        df, genes = cdk4_6_genes(data_dir, df, cdk4_6_genes_filename)
-    elif feature_selection == 'cdk4_6_cancer_genes':
-        df = cdk4_6_cancer_genes(data_dir=data_dir, df=df,
-                                 cdk4_6_genes_filename=cdk4_6_genes_filename,
-                                 cancer_genes_filename=cancer_genes_filename)
+
     # isolate the data that pertains to the sensitive class
     df_sensitive = df[df['label']==-1]
-    breast_sensitive = df_sensitive[df_sensitive['Tissue']=='breast']
-    df_sensitive = df_sensitive[df_sensitive['Tissue']!='breast']
-    
+    breast_sensitive = df_sensitive[df_sensitive['tissue']=='breast']
+    df_sensitive = df_sensitive[df_sensitive['tissue']!='breast']
     X_train_sensitive, X_valtest_sensitive, y_train_sensitive, y_valtest_sensitive = train_test_split(
         df_sensitive, df_sensitive['label'], test_size=.4)
     X_val_sensitive, X_test_sensitive, y_val_sensitive, y_test_sensitive = train_test_split(
@@ -96,9 +86,10 @@ def split_scale_data(
     y_train_resistant = pd.DataFrame()
     y_val_resistant = pd.DataFrame()
     y_test_resistant = pd.DataFrame()
+    leftover_resistant = pd.DataFrame()
     df_resistant = df[df['label']==1]
-    breast_resistant = df_resistant[df_resistant['Tissue']=='breast']
-    df_resistant = df_resistant[df_resistant['Tissue']!='breast']
+    breast_resistant = df_resistant[df_resistant['tissue']=='breast']
+    df_resistant = df_resistant[df_resistant['tissue']!='breast']
     
     # breast cancer samples - split so that you have both classes in train, val and test (if possible)
     X_train_sensitive_b = pd.DataFrame()
@@ -113,6 +104,7 @@ def split_scale_data(
     y_train_resistant_b = pd.DataFrame()
     y_val_resistant_b = pd.DataFrame()
     y_test_resistant_b = pd.DataFrame()
+    
     if len(breast_sensitive)>0:
         X_train_sensitive_b, X_valtest_sensitive_b, y_train_sensitive_b, y_valtest_sensitive_b = train_test_split(
             breast_sensitive, breast_sensitive['label'], test_size=.4)
@@ -124,59 +116,72 @@ def split_scale_data(
         X_val_resistant_b, X_test_resistant_b, y_val_resistant_b, y_test_resistant_b = train_test_split(
             X_valtest_resistant_b, y_valtest_resistant_b, test_size=.5)
     
-    for tissue in df_resistant['Tissue'].unique():
-        df_resistant_tissue = df_resistant[df_resistant['Tissue']==tissue]
+    for tissue in df_resistant['tissue'].unique():
+        df_resistant_tissue = df_resistant[df_resistant['tissue']==tissue]
         if df_resistant_tissue.shape[0]>3:
             X_train_tissue, X_valtest_tissue, y_train_tissue, y_valtest_tissue = train_test_split(
                 df_resistant_tissue, df_resistant_tissue['label'], test_size=.4)
             X_val_tissue, X_test_tissue, y_val_tissue, y_test_tissue = train_test_split(
                 X_valtest_tissue, y_valtest_tissue, test_size=.5)
-            
             X_train_resistant = pd.concat([X_train_resistant, X_train_tissue])
             X_val_resistant = pd.concat([X_val_resistant, X_val_tissue])
             X_test_resistant = pd.concat([X_test_resistant, X_test_tissue])
             y_train_resistant = pd.concat([y_train_resistant, y_train_tissue])
             y_val_resistant = pd.concat([y_val_resistant, y_val_tissue])
             y_test_resistant = pd.concat([y_test_resistant, y_test_tissue])
-    
-    X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b])
-    X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b])
-    X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b])
-    y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b])
-    y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b])
-    y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b])
-    
-    metadata_train = X_train_[['label', 'cell line', 'Tissue']]
-    metadata_val = X_val_[['label', 'cell line', 'Tissue']]
-    metadata_test = X_test[['label', 'cell line', 'Tissue']]
+        else:
+            leftover_resistant = pd.concat([leftover_resistant, df_resistant_tissue])
+    if leftover_resistant.shape[0]>0:
+        X_train_leftover, X_valtest_leftover, y_train_leftover, y_valtest_leftover = train_test_split(
+            leftover_resistant, leftover_resistant['label'], test_size=.4)
+        X_val_leftover, X_test_leftover, y_val_leftover, y_test_leftover = train_test_split(
+            X_valtest_leftover, y_valtest_leftover, test_size=.5)
+
+    if leftover_resistant.shape[0]<1:
+        X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b])
+        X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b])
+        X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b])
+        y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b])
+        y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b])
+        y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b])
+    else:
+        X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b,
+                          X_train_leftover])
+        X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b,
+                        X_val_leftover])
+        X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b,
+                        X_test_leftover])
+        y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b,
+                          y_train_leftover])
+        y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b,
+                        y_val_leftover])
+        y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b,
+                        y_test_leftover])
+
+    metadata_train = X_train_[['label', 'cell line', 'tissue']]
+    metadata_val = X_val_[['label', 'cell line', 'tissue']]
+    metadata_test = X_test[['label', 'cell line', 'tissue']]
     metadata_train['train_val_test'] = 'train'
     metadata_val['train_val_test'] = 'val'
     metadata_test['train_val_test'] = 'test'
     pearson_train = X_train_['for_pearson_calculation']
-    X_train_ = X_train_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
-    X_val_ = X_val_.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
-    X_test = X_test.drop(columns=['label', 'cell line', 'Tissue', 'for_pearson_calculation'])
+    X_train_ = X_train_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
+    X_val_ = X_val_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
+    X_test = X_test.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
     
     metadata = pd.concat([metadata_train, metadata_val, metadata_test])
-    
-    if feature_selection == 'pearson':
-        X_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test, pearson_train)
-    scaler = StandardScaler()
-    X_train_ = scaler.fit_transform(X_train_)
-    X_val_ = scaler.transform(X_val_)
-    X_test = scaler.transform(X_test)
-    
     grouped = []
     for type in ['train', 'val', 'test']:
-        for tissue in metadata['Tissue'].unique():
-            meta_sub = metadata[metadata['Tissue']==tissue]
+        for tissue in metadata['tissue'].unique():
+            meta_sub = metadata[metadata['tissue']==tissue]
             meta_sub = meta_sub[meta_sub['train_val_test']==type]
-            grouped.append([type, tissue, meta_sub['label'].tolist().count(-1),
+            grouped.append([type, tissue, ','.join(meta_sub['cell line'].tolist()),
+                            meta_sub['label'].tolist().count(-1),
                             meta_sub['label'].tolist().count(1)])
 
-    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'sensitive', 
+    grouped = pd.DataFrame(grouped, columns=['train_val_test', 'tissue', 'cell lines', 'sensitive', 
                                              'resistant'])
-    grouped.to_csv(output_dir + '/all_tissues/data_split.csv', index=False)
+    grouped.to_csv(output_dir + '/data_split.csv', index=False)
     grouped = grouped.melt(id_vars=['train_val_test', 'tissue'], value_vars=['sensitive',
                                                                              'resistant'])
     grouped = grouped.sort_values(by='tissue', ascending=True)
@@ -192,10 +197,58 @@ def split_scale_data(
                                          value_vars=['sensitive', 'resistant'])
     grouped = pd.concat([all_tissues_df, grouped])
     
-    plot_split(grouped, feature_selection, output_dir)
+    plot_split(grouped, output_dir)
     
-    if ros:
-        ros = RandomOverSampler(random_state=0)
-        X_train_, y_train_ = ros.fit_resample(X_train_, y_train_)
+    return X_train_, y_train_, X_val_, y_val_, X_test, y_test, pearson_train, metadata
 
-    return X_train_, y_train_, X_val_, y_val_, X_test, y_test, metadata
+
+def select_features(
+    data_dir, X_train_, X_val_, X_test, pearson_train, feature_selection, 
+    cdk4_6_genes_filename=None, cancer_genes_filename=None):
+    '''
+    Performs feature selection.
+    '''
+    
+    if feature_selection == 'cdk4_6_genes':
+        X_train_, genes = cdk4_6_genes(data_dir, X_train_, cdk4_6_genes_filename)
+        X_val_, genes = cdk4_6_genes(data_dir, X_val_, cdk4_6_genes_filename)
+        X_test, genes = cdk4_6_genes(data_dir, X_test, cdk4_6_genes_filename)
+    elif feature_selection == 'cdk4_6_cancer':
+        X_train_ = cdk4_6_cancer_genes(
+            data_dir=data_dir, df=X_train_,
+            cdk4_6_genes_filename=cdk4_6_genes_filename,
+            cancer_genes_filename=cancer_genes_filename)
+        X_val_ = cdk4_6_cancer_genes(
+            data_dir=data_dir, df=X_val_,
+            cdk4_6_genes_filename=cdk4_6_genes_filename,
+            cancer_genes_filename=cancer_genes_filename)
+        X_test = cdk4_6_cancer_genes(
+            data_dir=data_dir, df=X_test,
+            cdk4_6_genes_filename=cdk4_6_genes_filename,
+            cancer_genes_filename=cancer_genes_filename)
+    elif feature_selection == 'pearson':
+        X_train_, X_val_, X_test = pearson(X_train_, X_val_, X_test, pearson_train)
+    
+    return X_train_, X_val_, X_test
+
+def scale_and_transform(X_train_, X_val_, X_test):
+    '''
+    Scales and normalizes the training,
+    validation and testing datasets.
+    '''
+    
+    scaler = StandardScaler()
+    X_train_ = scaler.fit_transform(X_train_)
+    X_val_ = scaler.transform(X_val_)
+    X_test = scaler.transform(X_test)
+    
+    return X_train_, X_val_, X_test
+
+def ros_run(X_train_, y_train_):
+    '''
+    Performs random oversampling on the training dataset only.
+    '''
+    
+    ros = RandomOverSampler(random_state=0)
+    X_train_, y_train_ = ros.fit_resample(X_train_, y_train_)
+    return X_train_, y_train_

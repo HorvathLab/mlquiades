@@ -25,25 +25,12 @@ def params():
         default='output',
         help='output folder name (optional)')
     parser.add_argument(
-        '--c',
-        type=str,
-        action='store',
-        dest='data_filename',
-        help='data filename (required)')
-    parser.add_argument(
         '--d',
         type=bool,
         action='store',
         dest='confusion', 
         default=False,
         help='plot confusion matrices per tissue type')
-    parser.add_argument(
-        '--e',
-        type=bool,
-        action='store',
-        dest='rocauc', 
-        default=False,
-        help='plot rocauc per tissue type')
     parser.add_argument(
         '--f',
         type=bool,
@@ -57,32 +44,28 @@ def params():
         action='store',
         dest='step_size_nodes',
         default=5,
-        help='step size for nodes in hyperparameter tuning for nn w/ hyperband '
-        '(optional)')
+        help='step size for nodes in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--i',
         type=int,
         action='store',
         dest='min_nodes',
         default=5,
-        help='minimum number of nodes in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='minimum number of nodes in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--j',
         type=int,
         action='store',
         dest='max_nodes',
         default=512,
-        help='maximum number of nodes in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='maximum number of nodes in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--k',
         type=int,
         action='store',
         dest='max_trials',
         default=10,
-        help='maximum number of trials in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='maximum number of trials in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--l',
         type=int,
@@ -117,48 +100,21 @@ def params():
         action='store',
         dest='learning_rate_min',
         default=1e-4,
-        help='learning rate minimum in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='learning rate minimum in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--q',
         type=float,
         action='store',
         dest='learning_rate_max',
         default=1e-2,
-        help='learning rate maximum in hyperparameter tuning for nn w/ hyperband'
-        '(optional)')
+        help='learning rate maximum in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--r',
-        type=str,
+        type=int,
         action='store',
-        dest='feature_selection',
-        default=None,
-        help='choose one of three options for feature selection for the ml models,' \
-        'options include: cdk4_6_genes, cdk4_6_cancer_genes, pearson (required)')
-    parser.add_argument(
-        '--s',
-        type=str,
-        action='store',
-        dest='cdk4_6_genes_filename',
-        help='filename for cdk4 and cdk6 genes for the feature selection option cdk4_6_genes (optional if pearson selected for -r)')
-    parser.add_argument(
-        '--t',
-        type=str,
-        action='store',
-        dest='cancer_genes_filename',
-        help='filename for cancer genes for the feature selection option cdk4_6_cancer_genes (optional unless cdk4_6_cancer_genes selected for -r)')
-    parser.add_argument(
-        '--u',
-        type=str,
-        action='store',
-        dest='drug',
-        help='drug name (e.g. palbociclib or ribociclib)')
-    parser.add_argument(
-        '--v',
-        type=str,
-        action='store',
-        dest='gdsc',
-        help='gdsc version (e.g. gdsc1 or gdsc2)')
+        dest='max_layers',
+        default=20,
+        help='the maximum number of layers for the neural net hyperband parameter tuning (optional)')
 
     return parser
 
@@ -167,9 +123,7 @@ def main():
     args = parser.parse_args()
     data_dir = args.data_dir + '/'
     output_dir = args.output_folder_name
-    data_filename = args.data_filename
     confusion = args.confusion
-    rocauc = args.rocauc
     ros = args.ros
     step_size_nodes = args.step_size_nodes
     min_nodes = args.min_nodes
@@ -181,69 +135,78 @@ def main():
     epochs = args.epochs
     learning_rate_min = args.learning_rate_min
     learning_rate_max = args.learning_rate_max
-    feature_selection = args.feature_selection
-    cdk4_6_filename = args.cdk4_6_genes_filename
-    cancer_genes_filename = args.cancer_genes_filename
-    drug = args.drug
-    gdsc = args.gdsc
-    drug = drug.lower()
-    gdsc = gdsc.lower()
-    
-    if feature_selection is None:
-        raise TypeError('missing feature selection (option --r)')
-    if feature_selection == 'cdk4_6_genes':
-        if cdk4_6_filename is None:
-            raise TypeError('missing cdk4_6_genes_filename (option --s)')
-    if feature_selection == 'cdk4_6_cancer_genes':
-        if cancer_genes_filename is None:
-            raise TypeError('missing cancer_genes_filename (option --t)')           
+    confusion = args.confusion
+    max_layers = args.max_layers
+    cdk4_6_filename = 'cdk4_6_genes.txt'
+    cancer_genes_filename = 'cancer_genes.tsv'
 
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
-    if not os.path.isdir(output_dir + '/all_tissues/'):
-        os.mkdir(output_dir + '/all_tissues')
-    if rocauc or confusion:
-        if not os.path.isdir(output_dir + '/by_tissue/'):
-            os.mkdir(output_dir + '/by_tissue')
-    if confusion:
-        if not os.path.isdir(output_dir + '/by_tissue/confusion'):
-            os.mkdir(output_dir + '/by_tissue/confusion')
-    if rocauc:
-        if not os.path.isdir(output_dir + '/by_tissue/rocauc'):
-            os.mkdir(output_dir + '/by_tissue/rocauc')
-    
+        
     print('....... Reading in data ......................')
-    df = pd.read_csv(data_dir + data_filename)
-    df['label'] = df['label_' + drug + '_' + gdsc]
-    columns_label = [x for x in df.columns if 'gdsc' in x]
-    df['for_pearson_calculation'] = df['IC50_' + gdsc + '_' + drug]	
-    df = df.dropna(subset=['label_' + drug + '_' + gdsc]).drop(
-        columns=columns_label)
+    df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
+    df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
+    df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
+    df['for_pearson_calculation'] = df['ic50']
+    df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
     
     print('....... Splitting and scaling data ...........')
-    X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, metadata = split_scale_data(
-        data_dir=data_dir, output_dir=output_dir, df=df, ros=ros,
-        feature_selection=feature_selection, cdk4_6_genes_filename=cdk4_6_filename,
-        cancer_genes_filename=cancer_genes_filename)
-
-    print('....... Building and evaluating models .......')
-    nn_hb = neural_net_with_hyperband(
-        X_train_ros, y_train_ros, X_val_, y_val_, X_test, y_test, data_dir,
-        step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
-        patience, min_delta, epochs, learning_rate_min, learning_rate_max, output_dir,
-        feature_selection, metadata, plt_confusion=confusion, plt_rocauc=rocauc)
-    rf = random_forest(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
-        plt_confusion=confusion, plt_rocauc=rocauc)
-    ridge = ridge_classifier(
-        X_train_ros, y_train_ros, X_test, y_test, output_dir, feature_selection, metadata,
-        plt_confusion=confusion, plt_rocauc=rocauc)
-    evaluation_df = pd.concat([nn_hb, rf, ridge])
+    X_train_split, y_train, X_val_split, y_val_, X_test_split, y_test, pearson_train, metadata = split_data(
+        output_dir=output_dir, df=df)
     
-    print('....... Generating evaluation reports ........')
-    plot_combined_rocauc(evaluation_df, feature_selection, output_dir)
-    plot_combined_acc(evaluation_df, feature_selection, output_dir)
-    stitch_pngs(feature_selection, output_dir)
+    feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
+    datatypes_searchsymbols = [(['gex'], ['ensg']), (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
+    
+    for data_type, search_symbol in datatypes_searchsymbols:
+        for feature_select in feature_selections:
+            output_dir_feature = output_dir + '/' + feature_select + '_' + data_type[0]
+            X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
+            X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
+            X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
+
+            if not os.path.isdir(output_dir_feature):
+                os.mkdir(output_dir_feature)
+            if confusion:
+                os.mkdir(output_dir_feature + '/confusion')
+            
+            X_train_, X_val_, X_test = select_features(
+                data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
+                cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
+            X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
+            
+            if ros:
+                X_train_, y_train_ = ros_run(X_train_, y_train)
+
+            print('....... Building and evaluating models .......')
+            nn_hb = neural_net_with_hyperband(
+                X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
+                step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
+                patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
+                metadata, output_dir=output_dir_feature, plt_confusion=confusion)
+            svmach = svm_model(X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature,
+                             metadata=metadata)
+            rf = random_forest(
+                X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
+                plt_confusion=confusion)
+            ridge = ridge_classifier(
+                X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
+                plt_confusion=confusion)
+            evaluation_df = pd.concat([nn_hb, svmach, rf, ridge])
+            evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
+                'n_correctly_predicted_resistant_cell_lines']
+            evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
+            
+            print('....... Generating evaluation reports ........')
+            plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
+            plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
+            
+        stitch_pngs(output_dir, data_type[0])
+        
+    if os.path.isfile(data_dir + 'orchid.txt'):
+        f = open(data_dir + 'orchid.txt', 'r')
+        file_contents = f.read()
+        print(file_contents)
+        f.close()
 
 if __name__=='__main__': 
     main()
