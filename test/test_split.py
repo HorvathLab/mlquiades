@@ -30,6 +30,7 @@ def test_split():
     df_['tissue'][21:30]= 'lung'
     df_['tissue'][93:96]= 'lung'
     df_['cell line'] = np.arange(1, df_.shape[0] + 1)
+    df_['cell line'] = [str(x) for x in df_['cell line'].tolist()]
     df_['for_pearson_calculation'] = np.random.rand(df_.shape[0], 1)
 
     dir_ = 'test/'
