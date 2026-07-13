@@ -1,4 +1,4 @@
-# mlquiades
+# MLquiades
 *2026/07/13*
 
 (pronounced *em-el-kee-ah-days*)
