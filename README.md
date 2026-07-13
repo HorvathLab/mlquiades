@@ -9,8 +9,6 @@ These models include: neural net with hyperband tuning, random forest (ensemble)
 
 There are avenues for feature, in this case gene, selection. They include: only CDK4 and CDK6 related genes (the target for palbociclib); only CDK4, CDK6 and cancer genes with well-known somatic mutations (COSMIC); and a Pearson correlation method that keeps only the genes that have rho>=.3 value with the IC50 score in the training dataset only.
 
-<img src='https://github.com/HorvathLab/mlquiades/blob/f8914ff0dd84b56bdda62443296a7ae466a65afe/output/cdk4_6_genes_gex/plt_accuracy_all_cdk4_6_genes.png' width=100% height=100%>
-
 ## Installation
  
 Ubuntu and MacOS are supported. Windows is not currently supported.
