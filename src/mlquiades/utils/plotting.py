@@ -13,7 +13,7 @@ def plot_split(df, output_dir):
     number of sensitive and resistant cancer cell lines in each tissue type.
     '''
     
-    fig,ax = plt.subplots(3,1, figsize=(15,10))
+    fig,ax = plt.subplots(3,1, figsize=(40,15))
     
     p1 = sns.barplot(ax=ax[0], data=df[df['train_val_test']=='train'], x='tissue', 
                      y='value', hue='variable', palette=sns.color_palette('icefire'))
@@ -45,6 +45,7 @@ def plot_split(df, output_dir):
     p3.set_ylabel('# of cell lines')
     p3.set_xticklabels(p3.get_xticklabels(), rotation=45)
     
+    # fig.set_size_inches((1.5*16, 4))
     plt.tight_layout()
     plt.savefig(output_dir + '/data_split.png')
     plt.close()
@@ -69,8 +70,7 @@ def plot_combined_rocauc(
                          'value': df__['value'], 'tissue': df__['tissue']})
     bp = sns.barplot(df__, x='tissue', y='value', hue='model')
     fig = bp.get_figure()
-    fig.set_size_inches((1.5*16, 4))
-    # plt.subplots(figsize=(20,20))
+    fig.set_size_inches((2.5*16, 4))
     plt.tight_layout()
     fig.savefig(output_dir + '/plt_rocauc_all_' + feature_selection + '.png')
     plt.close()
@@ -106,7 +106,7 @@ def plot_combined_acc(
 
     tissues = df__['tissue'].unique()
 
-    fig, ax = plt.subplots(1,1, sharex='col', sharey='row', figsize=(1.5*16, 4), tight_layout=True)
+    fig, ax = plt.subplots(1,1, sharex='col', sharey='row', figsize=(2.5*16, 4), tight_layout=True)
 
     spacer = ''
     models = list()
@@ -114,8 +114,9 @@ def plot_combined_acc(
     for i in np.arange(len(tissues)):
         models.extend(
             ['nn\n' + spacer,
-            'rf\n' + tissues[i],
-            'ridge\n' + spacer]
+            'rf\n' + spacer,
+            'ridge\n' + tissues[i],
+            'svm\n' + spacer]
         )
         spacer = spacer + ' '
 
@@ -125,7 +126,7 @@ def plot_combined_acc(
     }
     count = 0
     width = 0.5
-    bottom = np.zeros(len(tissues)*3)
+    bottom = np.zeros(len(tissues)*4)
 
     for boolean, weight_count in weight_counts.items():
         p = ax.bar(models, weight_count, width, label=boolean, bottom=bottom)
@@ -137,7 +138,7 @@ def plot_combined_acc(
     ax.legend(loc="upper right")
     plt.ylabel('accuracy')
     for i in np.arange(len(tissues)):
-        plt.vlines(2.5+(3*i), 0, 1, colors='black', linestyles='dotted')
+        plt.vlines(3.5+(4*i), 0, 1, colors='black', linestyles='dotted')
     
     plt.savefig(output_dir + '/plt_accuracy_all_' + feature_selection + '.png')
     plt.close()

@@ -183,13 +183,15 @@ def main():
                 step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
                 patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
                 metadata, output_dir=output_dir_feature, plt_confusion=confusion)
+            svmach = svm_model(X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature,
+                             metadata=metadata)
             rf = random_forest(
                 X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
                 plt_confusion=confusion)
             ridge = ridge_classifier(
                 X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
                 plt_confusion=confusion)
-            evaluation_df = pd.concat([nn_hb, rf, ridge])
+            evaluation_df = pd.concat([nn_hb, svmach, rf, ridge])
             evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
                 'n_correctly_predicted_resistant_cell_lines']
             evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)

@@ -3,6 +3,7 @@ import keras_tuner
 import numpy as np
 import pandas as pd
 from .plotting import *
+from sklearn import svm
 from keras import layers
 from sklearn import metrics
 from itertools import compress
@@ -212,4 +213,89 @@ def ridge_classifier(
         plot_confusion_matrix(
             y_test['label'], y_pred, output_dir, model_name='ridge_classification', nn=False)
     
+    return pd.DataFrame(evaluation_df)
+
+
+def ridge_classifier(
+        X_train_ros, y_train_ros, X_test, y_test, output_dir,
+        metadata, plt_confusion=False):
+    '''
+    Builds ridge classifier model. Fits the model to the randomly oversampled
+    training data. Makes predictions on the testing dataset. Plots confusion
+    matrix and ROCAUC plot.
+    '''
+    clf = RidgeClassifier().fit(X_train_ros, y_train_ros)
+    
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+    
+    evaluation_df = []
+    for tissue in metadata_test['tissue'].unique():
+        X_test_tissue = X_test[metadata_test['tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['tissue']==tissue]
+        metadata_tissue = metadata_test[metadata_test['tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            y_pred = clf.predict(X_test_tissue)
+            if len(y_test_tissue['label'].unique())>1:
+                acc, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
+                zeros, ones = counter(y_test_tissue['label'], y_pred)
+                if plt_confusion:
+                    plot_confusion_matrix(
+                        y_test_tissue['label'], y_pred, output_dir,
+                        model_name='ridge_classification_' + tissue, nn=False)
+                evaluation_df.append(['ridge_classification', tissue, acc, rocauc, zeros, ones])
+            else:
+                acc = metrics.accuracy_score(y_test_tissue, y_pred)
+                zeros, ones = counter(y_test_tissue['label'], y_pred)
+                evaluation_df.append(['ridge_classification', tissue, acc, 0, zeros, ones])
+    
+    y_pred = clf.predict(X_test)
+    
+    acc, rocauc, fpr, tpr = evaluate(y_test, y_pred)
+    zeros, ones = counter(y_test['label'], y_pred)
+    evaluation_df.append(['ridge_classification', 'all_tissues', acc, rocauc, zeros, ones])
+    
+    if plt_confusion:
+        plot_confusion_matrix(
+            y_test['label'], y_pred, output_dir, model_name='ridge_classification', nn=False)
+    
+    return pd.DataFrame(evaluation_df)
+
+def svm_model(
+    X_train, y_train, X_test, y_test, output_dir, metadata):
+    '''
+    Builds svm (l1 regularization).
+    '''
+    clf = svm.SVC().fit(X_train, y_train)
+    
+    metadata_test = metadata[metadata['train_val_test']=='test'].reset_index(drop=True)
+
+    evaluation_df = []
+    for tissue in metadata_test['tissue'].unique():
+        X_test_tissue = X_test[metadata_test['tissue']==tissue]
+        y_test_tissue = y_test.reset_index(drop=True)[metadata_test['tissue']==tissue]
+        metadata_tissue = metadata_test[metadata_test['tissue']==tissue]
+        if X_test_tissue.shape[0]>0:
+            y_pred = clf.predict(X_test_tissue)
+            if len(y_test_tissue['label'].unique())>1:
+                acc, rocauc, fpr, tpr = evaluate(y_test_tissue, y_pred)
+                zeros, ones = counter(y_test_tissue['label'], y_pred)
+                # if plt_confusion:
+                #     plot_confusion_matrix(y_test_tissue['label'], y_pred, output_dir,
+                #                           feature_selection,
+                #                         model_name='elastic_net_' + tissue, nn=False)
+                # if plt_rocauc:
+                #     plot_rocauc(fpr, tpr, output_dir, feature_selection, model_name='ridge_'
+                #                 + tissue)
+                evaluation_df.append(['svm', tissue, acc, rocauc, zeros, ones])
+            else:
+                acc = metrics.accuracy_score(y_test_tissue, y_pred)
+                zeros, ones = counter(y_test_tissue['label'], y_pred)
+                evaluation_df.append(['svm', tissue, acc, 0, zeros, ones])
+
+    y_pred = clf.predict(X_test)
+
+    acc, rocauc, fpr, tpr = evaluate(y_test, y_pred)
+    zeros, ones = counter(y_test['label'], y_pred)
+    evaluation_df.append(['svm', 'all_tissues', acc, rocauc, zeros, ones])
+
     return pd.DataFrame(evaluation_df)
