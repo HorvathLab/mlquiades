@@ -24,7 +24,7 @@ https://zenodo.org/records/21043540
 
 ```
 pip install zenodo-get
-zenodo_get 21043540
+zenodo_get 21043540 -o sample data
 ```
 
 If you use a different package manager, install packages to your environment from `pyproject.toml`
