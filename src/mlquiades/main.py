@@ -144,7 +144,7 @@ def main():
         os.mkdir(output_dir)
         
     print('....... Reading in data ......................')
-    df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
+    df = pd.read_csv(data_dir + 'gex_ccl_clinical_palbociclib.csv')
     # df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
     # df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
     df['for_pearson_calculation'] = df['ic50']
