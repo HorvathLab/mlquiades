@@ -145,23 +145,28 @@ def main():
         
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
-    df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
-    df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue', 'her_neg_hr_pos'])
+    # df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
+    # df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
     df['for_pearson_calculation'] = df['ic50']
     df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
-    
+
     print('....... Splitting and scaling data ...........')
     X_train_split, y_train, X_val_split, y_val_, X_test_split, y_test, pearson_train, metadata = split_data(
         output_dir=output_dir, df=df)
+    # feature_selections = ['pearson']   
     feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
-    datatypes_searchsymbols = [(['gex'], ['ensg']), (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
+    datatypes_searchsymbols = [(['gex'], ['ensg'])]#, (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
     
     for data_type, search_symbol in datatypes_searchsymbols:
         for feature_select in feature_selections:
             output_dir_feature = output_dir + '/' + feature_select + '_' + data_type[0]
-            X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
-            X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
-            X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
+            # X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
+            # X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
+            # X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
+
+            X_train_ = X_train_split
+            X_val_ = X_val_split
+            X_test = X_test_split
             
             if not os.path.isdir(output_dir_feature):
                 os.mkdir(output_dir_feature)
@@ -172,7 +177,7 @@ def main():
                 data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
                 cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
             X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
-
+            
             metadata_train = metadata[metadata['train_val_test']=='train']
             metadata_test = metadata[metadata['train_val_test']=='test']
             
@@ -186,25 +191,33 @@ def main():
             
             X_train_ = np.concatenate((X_train_, X_train_breast), axis=0)
             y_train_ = pd.DataFrame(np.concatenate((y_train_not_breast, y_train_breast), axis=None), columns=['label'])
+            metadata_test = metadata[metadata['train_val_test']=='test']
             
             print('....... Building and evaluating models .......')
-            nn_hb = neural_net_with_hyperband(
+            nn_hb,nn_ypred = neural_net_with_hyperband(
                 X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
                 step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
                 patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
                 metadata, output_dir=output_dir_feature, plt_confusion=confusion)
-            svmach = svm_model(X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature,
+            svmach,svm_ypred  = svm_model(X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature,
                              metadata=metadata)
-            rf = random_forest(
+            rf,rf_ypred = random_forest(
                 X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
                 plt_confusion=confusion)
-            ridge = ridge_classifier(
+            ridge,ridge_ypred = ridge_classifier(
                 X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
                 plt_confusion=confusion)
+            
+            metadata_test['nn_ypred'] = nn_ypred
+            metadata_test['svm_ypred'] = svm_ypred
+            metadata_test['rf_ypred'] = rf_ypred
+            metadata_test['ridge_ypred'] = ridge_ypred
+            
             evaluation_df = pd.concat([nn_hb, svmach, rf, ridge])
             evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
                 'n_correctly_predicted_resistant_cell_lines']
             evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
+            metadata_test.to_csv(output_dir_feature + '/metadata_test.csv', index=False)
             
             print('....... Generating evaluation reports ........')
             plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
