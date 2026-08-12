@@ -146,14 +146,13 @@ def main():
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
     df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
-    df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue'])
+    df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue', 'her_neg_hr_pos'])
     df['for_pearson_calculation'] = df['ic50']
     df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
     
     print('....... Splitting and scaling data ...........')
     X_train_split, y_train, X_val_split, y_val_, X_test_split, y_test, pearson_train, metadata = split_data(
         output_dir=output_dir, df=df)
-    
     feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
     datatypes_searchsymbols = [(['gex'], ['ensg']), (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
     
@@ -163,7 +162,7 @@ def main():
             X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
             X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
             X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
-
+            
             if not os.path.isdir(output_dir_feature):
                 os.mkdir(output_dir_feature)
             if confusion:
@@ -173,10 +172,21 @@ def main():
                 data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
                 cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
             X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
+
+            metadata_train = metadata[metadata['train_val_test']=='train']
+            metadata_test = metadata[metadata['train_val_test']=='test']
+            
+            X_train_breast = X_train_[metadata_train['tissue']=='breast', :]
+            X_train_ = X_train_[metadata_train['tissue']!='breast', :]
+            y_train_breast = y_train[metadata_train['tissue']=='breast']
+            y_train_not_breast = y_train[metadata_train['tissue']!='breast']
             
             if ros:
-                X_train_, y_train_ = ros_run(X_train_, y_train)
-
+                X_train_breast, y_train_breast = ros_run(X_train_breast, y_train_breast)
+            
+            X_train_ = np.concatenate((X_train_, X_train_breast), axis=0)
+            y_train_ = pd.DataFrame(np.concatenate((y_train_not_breast, y_train_breast), axis=None), columns=['label'])
+            
             print('....... Building and evaluating models .......')
             nn_hb = neural_net_with_hyperband(
                 X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
