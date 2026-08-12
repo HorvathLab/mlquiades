@@ -29,7 +29,7 @@ uv venv
 # activate the venv: your command may differ for a different shell
 source .venv/bin/activate
 uv python pin 3.10
-zenodo_get 21043540 -o sample_data #https://zenodo.org/records/21043540
+zenodo_get 21893525 -o sample_data #https://zenodo.org/records/21893525
 tar -xvf sample_data/palbociclib_gex_isos.gz -C sample_data
 uv run src/mlquiades/main.py --a sample_data --b output_dir
 ```
@@ -37,7 +37,7 @@ uv run src/mlquiades/main.py --a sample_data --b output_dir
 If not using uv
 ```
 pip install -e .
-zenodo_get 21043540 -o sample_data #https://zenodo.org/records/21043540
+zenodo_get 21043540 -o sample_data #https://zenodo.org/records/21842954
 tar -xvf sample_data/palbociclib_gex_isos.gz -C sample_data
 python src/mlquiades/main.py --a sample_data --b output_dir
 ```

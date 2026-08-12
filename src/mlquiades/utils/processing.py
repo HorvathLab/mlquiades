@@ -69,7 +69,9 @@ def split_data(
     60-20-20 for the samples in that class. The remaining samples are also
     split 60-20-20 within each tissue type.]
     '''
-
+    #first separate breast cancer cell lines that are her2-/hr+ since palbociclib is useful for those
+    df_herneghrpos = df[df['her_neg_hr_pos']==1]
+    
     # isolate the data that pertains to the sensitive class
     df_sensitive = df[df['label']==-1]
     breast_sensitive = df_sensitive[df_sensitive['tissue']=='breast']
@@ -94,27 +96,27 @@ def split_data(
     # breast cancer samples - split so that you have both classes in train, val and test (if possible)
     X_train_sensitive_b = pd.DataFrame()
     X_val_sensitive_b = pd.DataFrame()
-    X_test_sensitive_b = pd.DataFrame()
+    X_test_sensitive_b = df_herneghrpos[df_herneghrpos['label']==-1]
     y_train_sensitive_b = pd.DataFrame()
     y_val_sensitive_b = pd.DataFrame()
-    y_test_sensitive_b = pd.DataFrame()
+    y_test_sensitive_b = df_herneghrpos[df_herneghrpos['label']==-1]['label']
     X_train_resistant_b = pd.DataFrame()
     X_val_resistant_b = pd.DataFrame()
-    X_test_resistant_b = pd.DataFrame()
+    X_test_resistant_b = df_herneghrpos[df_herneghrpos['label']==1]
     y_train_resistant_b = pd.DataFrame()
     y_val_resistant_b = pd.DataFrame()
-    y_test_resistant_b = pd.DataFrame()
+    y_test_resistant_b = df_herneghrpos[df_herneghrpos['label']==1]['label']
     
     if len(breast_sensitive)>0:
-        X_train_sensitive_b, X_valtest_sensitive_b, y_train_sensitive_b, y_valtest_sensitive_b = train_test_split(
-            breast_sensitive, breast_sensitive['label'], test_size=.4)
-        X_val_sensitive_b, X_test_sensitive_b, y_val_sensitive_b, y_test_sensitive_b = train_test_split(
-            X_valtest_sensitive_b, y_valtest_sensitive_b, test_size=.5)
+        X_train_sensitive_b, X_val_sensitive_b, y_train_sensitive_b, y_val_sensitive_b = train_test_split(
+            breast_sensitive, breast_sensitive['label'], test_size=.25)
+        # X_val_sensitive_b, X_test_sensitive_b, y_val_sensitive_b, y_test_sensitive_b = train_test_split(
+        #     X_valtest_sensitive_b, y_valtest_sensitive_b, test_size=.5)
     if len(breast_resistant)>0:
-        X_train_resistant_b, X_valtest_resistant_b, y_train_resistant_b, y_valtest_resistant_b = train_test_split(
-            breast_resistant, breast_resistant['label'], test_size=.4)
-        X_val_resistant_b, X_test_resistant_b, y_val_resistant_b, y_test_resistant_b = train_test_split(
-            X_valtest_resistant_b, y_valtest_resistant_b, test_size=.5)
+        X_train_resistant_b, X_val_resistant_b, y_train_resistant_b, y_val_resistant_b = train_test_split(
+            breast_resistant, breast_resistant['label'], test_size=.25)
+        # X_val_resistant_b, X_test_resistant_b, y_val_resistant_b, y_test_resistant_b = train_test_split(
+        #     X_valtest_resistant_b, y_valtest_resistant_b, test_size=.5
     
     for tissue in df_resistant['tissue'].unique():
         df_resistant_tissue = df_resistant[df_resistant['tissue']==tissue]
@@ -138,25 +140,49 @@ def split_data(
             X_valtest_leftover, y_valtest_leftover, test_size=.5)
 
     if leftover_resistant.shape[0]<1:
-        X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b])
-        X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b])
-        X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b])
-        y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b])
-        y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b])
-        y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b])
+        X_train_ = pd.concat([
+            X_train_sensitive, X_train_resistant,
+            X_train_resistant_b, X_train_sensitive_b])
+        X_val_ = pd.concat([
+            X_val_sensitive, X_val_resistant,
+            X_val_sensitive_b, X_val_resistant_b])
+        X_test = pd.concat([
+            X_test_sensitive, X_test_resistant,
+            X_test_sensitive_b, X_test_resistant_b])
+        y_train_ = pd.concat([
+            y_train_sensitive, y_train_resistant,
+            y_train_sensitive_b, y_train_resistant_b])
+        y_val_ = pd.concat([
+            y_val_sensitive, y_val_resistant,
+            y_val_sensitive_b, y_val_resistant_b])
+        y_test = pd.concat([
+            y_test_sensitive, y_test_resistant,
+            y_test_sensitive_b, y_test_resistant_b])
     else:
-        X_train_ = pd.concat([X_train_sensitive, X_train_resistant, X_train_resistant_b, X_train_sensitive_b,
-                          X_train_leftover])
-        X_val_ = pd.concat([X_val_sensitive, X_val_resistant, X_val_sensitive_b, X_val_resistant_b,
-                        X_val_leftover])
-        X_test = pd.concat([X_test_sensitive, X_test_resistant, X_test_sensitive_b, X_test_resistant_b,
-                        X_test_leftover])
-        y_train_ = pd.concat([y_train_sensitive, y_train_resistant, y_train_sensitive_b, y_train_resistant_b,
-                          y_train_leftover])
-        y_val_ = pd.concat([y_val_sensitive, y_val_resistant, y_val_sensitive_b, y_val_resistant_b,
-                        y_val_leftover])
-        y_test = pd.concat([y_test_sensitive, y_test_resistant, y_test_sensitive_b, y_test_resistant_b,
-                        y_test_leftover])
+        X_train_ = pd.concat([
+            X_train_sensitive, X_train_resistant, 
+            X_train_resistant_b, X_train_sensitive_b,
+            X_train_leftover])
+        X_val_ = pd.concat([
+            X_val_sensitive, X_val_resistant,
+            X_val_sensitive_b, X_val_resistant_b,
+            X_val_leftover])
+        X_test = pd.concat([
+            X_test_sensitive, X_test_resistant,
+            X_test_sensitive_b, X_test_resistant_b,
+            X_test_leftover])
+        y_train_ = pd.concat([
+            y_train_sensitive, y_train_resistant,
+            y_train_sensitive_b, y_train_resistant_b,
+            y_train_leftover])
+        y_val_ = pd.concat([
+            y_val_sensitive, y_val_resistant,
+            y_val_sensitive_b, y_val_resistant_b,
+            y_val_leftover])
+        y_test = pd.concat([
+            y_test_sensitive, y_test_resistant,
+            y_test_sensitive_b, y_test_resistant_b,
+            y_test_leftover])
 
     metadata_train = X_train_[['label', 'cell line', 'tissue']]
     metadata_val = X_val_[['label', 'cell line', 'tissue']]
@@ -165,9 +191,9 @@ def split_data(
     metadata_val['train_val_test'] = 'val'
     metadata_test['train_val_test'] = 'test'
     pearson_train = X_train_['for_pearson_calculation']
-    X_train_ = X_train_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
-    X_val_ = X_val_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
-    X_test = X_test.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation'])
+    X_train_ = X_train_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation', 'her_neg_hr_pos'])
+    X_val_ = X_val_.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation', 'her_neg_hr_pos'])
+    X_test = X_test.drop(columns=['label', 'cell line', 'tissue', 'for_pearson_calculation', 'her_neg_hr_pos'])
     
     metadata = pd.concat([metadata_train, metadata_val, metadata_test])
     grouped = []
