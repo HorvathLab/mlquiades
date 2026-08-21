@@ -29,8 +29,8 @@ uv venv
 # activate the venv: your command may differ for a different shell
 source .venv/bin/activate
 uv python pin 3.10
-zenodo_get 21893525 -o sample_data #https://zenodo.org/records/21893525
-tar -xvf sample_data/palbociclib_gex_isos.gz -C sample_data
+zenodo_get 21910946 -o sample_data #https://zenodo.org/records/21910946
+tar -xvf sample_data/mlquiades_data.gz -C sample_data
 uv run src/mlquiades/main.py --a sample_data --b output_dir
 ```
 
