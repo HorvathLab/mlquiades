@@ -71,7 +71,7 @@ def split_data(
     '''
     #first separate breast cancer cell lines that are her2-/hr+ since palbociclib is useful for those
     df_herneghrpos = df[df['her_neg_hr_pos']==1]
-    df_not_herneghrpos = df[df['her_neg_hr_pos']==0]
+    df_not_herneghrpos = df[df['her_neg_hr_pos']!=1]
     
     # isolate the data that pertains to the sensitive class
     df_sensitive = df_not_herneghrpos[df_not_herneghrpos['label']==-1]
