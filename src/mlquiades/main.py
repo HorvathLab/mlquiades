@@ -164,7 +164,7 @@ def main():
         output_dir=output_dir, df=df)
     
     feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
-    datatypes_searchsymbols = [(['gex'], ['ensg'])]#, (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
+    datatypes_searchsymbols = [(['gex'], ['ensg']), (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
     
     for data_type, search_symbol in datatypes_searchsymbols:
         for feature_select in feature_selections:
