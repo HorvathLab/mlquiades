@@ -71,9 +71,10 @@ def split_data(
     '''
     #first separate breast cancer cell lines that are her2-/hr+ since palbociclib is useful for those
     df_herneghrpos = df[df['her_neg_hr_pos']==1]
+    df_not_herneghrpos = df[df['her_neg_hr_pos']!=1]
     
     # isolate the data that pertains to the sensitive class
-    df_sensitive = df[df['label']==-1]
+    df_sensitive = df_not_herneghrpos[df_not_herneghrpos['label']==-1]
     breast_sensitive = df_sensitive[df_sensitive['tissue']=='breast']
     df_sensitive = df_sensitive[df_sensitive['tissue']!='breast']
     X_train_sensitive, X_valtest_sensitive, y_train_sensitive, y_valtest_sensitive = train_test_split(
@@ -89,7 +90,7 @@ def split_data(
     y_val_resistant = pd.DataFrame()
     y_test_resistant = pd.DataFrame()
     leftover_resistant = pd.DataFrame()
-    df_resistant = df[df['label']==1]
+    df_resistant = df_not_herneghrpos[df_not_herneghrpos['label']==1]
     breast_resistant = df_resistant[df_resistant['tissue']=='breast']
     df_resistant = df_resistant[df_resistant['tissue']!='breast']
     
@@ -133,11 +134,17 @@ def split_data(
             y_test_resistant = pd.concat([y_test_resistant, y_test_tissue])
         else:
             leftover_resistant = pd.concat([leftover_resistant, df_resistant_tissue])
-    if leftover_resistant.shape[0]>0:
+    if leftover_resistant.shape[0]>=3:
         X_train_leftover, X_valtest_leftover, y_train_leftover, y_valtest_leftover = train_test_split(
             leftover_resistant, leftover_resistant['label'], test_size=.4)
         X_val_leftover, X_test_leftover, y_val_leftover, y_test_leftover = train_test_split(
             X_valtest_leftover, y_valtest_leftover, test_size=.5)
+    elif leftover_resistant.shape[0]>0:
+        # too few to split three ways: put them all in training
+        X_train_leftover = leftover_resistant
+        y_train_leftover = leftover_resistant['label']
+        X_val_leftover = X_test_leftover = pd.DataFrame()
+        y_val_leftover = y_test_leftover = pd.Series(dtype=float)
 
     if leftover_resistant.shape[0]<1:
         X_train_ = pd.concat([
@@ -226,7 +233,6 @@ def split_data(
     plot_split(grouped, output_dir)
     
     return X_train_, y_train_, X_val_, y_val_, X_test, y_test, pearson_train, metadata
-
 
 def select_features(
     data_dir, X_train_, X_val_, X_test, pearson_train, feature_selection, 
