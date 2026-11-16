@@ -1,4 +1,5 @@
 import os
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")  # must come before TF is imported
 import sys
 import argparse
 from utils import *
@@ -43,14 +44,14 @@ def params():
         type=int,
         action='store',
         dest='step_size_nodes',
-        default=5,
-        help='step size for nodes in hyperparameter tuning for nn w/ hyperband (optional)')
+        default=2,
+        help='multiplier between consecutive node counts (log scale) in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--i',
         type=int,
         action='store',
         dest='min_nodes',
-        default=5,
+        default=16,
         help='minimum number of nodes in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--j',
@@ -63,9 +64,9 @@ def params():
         '--k',
         type=int,
         action='store',
-        dest='max_trials',
-        default=10,
-        help='maximum number of trials in hyperparameter tuning for nn w/ hyperband (optional)')
+        dest='factor',
+        default=3,
+        help='reduction factor for the number of models and epochs per bracket in nn w/ hyperband (optional)')
     parser.add_argument(
         '--l',
         type=int,
@@ -78,14 +79,14 @@ def params():
         type=int,
         action='store',
         dest='patience',
-        default=3,
+        default=8,
         help='patience in early stopping for nn w/ hyperband (optional)')
     parser.add_argument(
         '--n',
         type=float,
         action='store',
         dest='min_delta',
-        default=.01,
+        default=.001,
         help='minimum delta in early stopping for nn w/ hyperband (optional)')
     parser.add_argument(
         '--o',
@@ -93,7 +94,7 @@ def params():
         action='store',
         dest='epochs',
         default=100,
-        help='epochs in hyperparameter tuning for nn w/ hyperband (optional)')
+        help='maximum epochs per model in hyperparameter tuning for nn w/ hyperband (optional)')
     parser.add_argument(
         '--p',
         type=float,
@@ -113,8 +114,15 @@ def params():
         type=int,
         action='store',
         dest='max_layers',
-        default=20,
+        default=3,
         help='the maximum number of layers for the neural net hyperband parameter tuning (optional)')
+    parser.add_argument(
+        '--s',
+        type=int,
+        action='store',
+        dest='hyperband_iterations',
+        default=1,
+        help='number of full hyperband iterations for nn w/ hyperband (optional)')
 
     return parser
 
@@ -128,7 +136,7 @@ def main():
     step_size_nodes = args.step_size_nodes
     min_nodes = args.min_nodes
     max_nodes = args.max_nodes
-    max_trials = args.max_trials
+    factor = args.factor
     executions_per_trial = args.executions_per_trial
     patience = args.patience
     min_delta = args.min_delta
@@ -137,6 +145,7 @@ def main():
     learning_rate_max = args.learning_rate_max
     confusion = args.confusion
     max_layers = args.max_layers
+    hyperband_iterations = args.hyperband_iterations
     cdk4_6_filename = 'cdk4_6_genes.txt'
     cancer_genes_filename = 'cancer_genes.tsv'
 
@@ -145,16 +154,17 @@ def main():
         
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
-    df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
-    df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue', 'her_neg_hr_pos'])
+    # df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
+    # df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue', 'her_neg_hr_pos'])
     df['for_pearson_calculation'] = df['ic50']
     df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
     
     print('....... Splitting and scaling data ...........')
     X_train_split, y_train, X_val_split, y_val_, X_test_split, y_test, pearson_train, metadata = split_data(
         output_dir=output_dir, df=df)
+    
     feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
-    datatypes_searchsymbols = [(['gex'], ['ensg']), (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
+    datatypes_searchsymbols = [(['gex'], ['ensg'])]#, (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
     
     for data_type, search_symbol in datatypes_searchsymbols:
         for feature_select in feature_selections:
@@ -162,7 +172,7 @@ def main():
             X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
             X_val_ = X_val_split.iloc[:, X_val_split.columns.str.contains('|'.join(search_symbol))]
             X_test = X_test_split.iloc[:, X_test_split.columns.str.contains('|'.join(search_symbol))]
-            
+
             if not os.path.isdir(output_dir_feature):
                 os.mkdir(output_dir_feature)
             if confusion:
@@ -172,7 +182,7 @@ def main():
                 data_dir, X_train_, X_val_, X_test, pearson_train, feature_select,
                 cdk4_6_genes_filename=cdk4_6_filename, cancer_genes_filename=cancer_genes_filename)
             X_train_, X_val_, X_test = scale_and_transform(X_train_, X_val_, X_test)
-
+            
             metadata_train = metadata[metadata['train_val_test']=='train']
             metadata_test = metadata[metadata['train_val_test']=='test']
             
@@ -186,29 +196,45 @@ def main():
             
             X_train_ = np.concatenate((X_train_, X_train_breast), axis=0)
             y_train_ = pd.DataFrame(np.concatenate((y_train_not_breast, y_train_breast), axis=None), columns=['label'])
+            metadata_test = metadata[metadata['train_val_test']=='test']
             
             print('....... Building and evaluating models .......')
-            nn_hb = neural_net_with_hyperband(
-                X_train_, y_train_, X_val_, y_val_, X_test, y_test, data_dir,
-                step_size_nodes, min_nodes, max_nodes, max_trials, executions_per_trial,
+            nn_hb,nn_ypred = neural_net_with_hyperband(
+                X_train_, y_train_, X_val_, y_val_, X_test, y_test,
+                step_size_nodes, min_nodes, max_nodes, factor, executions_per_trial,
                 patience, min_delta, epochs, learning_rate_min, learning_rate_max, max_layers,
-                metadata, output_dir=output_dir_feature, plt_confusion=confusion)
-            svmach = svm_model(X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature,
-                             metadata=metadata)
-            rf = random_forest(
-                X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
+                metadata, output_dir=output_dir_feature, hyperband_iterations=hyperband_iterations, 
                 plt_confusion=confusion)
-            ridge = ridge_classifier(
+            svmach,svm_ypred  = svm_model(X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature,
+                             metadata=metadata, X_val=X_val_, y_val=y_val_)
+            rf,rf_ypred = random_forest(
                 X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
-                plt_confusion=confusion)
-            evaluation_df = pd.concat([nn_hb, svmach, rf, ridge])
+                X_val=X_val_, y_val=y_val_, plt_confusion=confusion)
+            ridge,ridge_ypred = ridge_classifier(
+                X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
+                X_val=X_val_, y_val=y_val_, plt_confusion=confusion)
+            svm_l1,svm_l1_ypred = l1_svm(
+                X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
+                X_val=X_val_, y_val=y_val_, plt_confusion=confusion)
+
+            metadata_test['nn_ypred'] = nn_ypred
+            metadata_test['svm_ypred'] = svm_ypred
+            metadata_test['rf_ypred'] = rf_ypred
+            metadata_test['ridge_ypred'] = ridge_ypred
+            metadata_test['svm_l1_ypred'] = svm_l1_ypred
+
+            evaluation_df = pd.concat([nn_hb, svmach, rf, ridge, svm_l1])
             evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_correctly_predicted_sensitive_cell_lines', \
                 'n_correctly_predicted_resistant_cell_lines']
+            evaluation_df['model'] = evaluation_df['model'].replace(
+                {'nn_hb': 'nn', 'ridge_classification': 'ridge', 'svm': 'svm2', 'svm_l1': 'svm1'})
             evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
+            metadata_test.to_csv(output_dir_feature + '/metadata_test.csv', index=False)
             
             print('....... Generating evaluation reports ........')
-            plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature)
-            plot_combined_acc(evaluation_df, feature_select, output_dir_feature)
+            tissues = tissue_order(metadata['tissue'])
+            plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature, tissues=tissues)
+            plot_combined_acc(evaluation_df, feature_select, output_dir_feature, tissues=tissues)
             
         stitch_pngs(output_dir, data_type[0])
         
