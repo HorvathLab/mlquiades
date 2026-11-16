@@ -110,6 +110,13 @@ python src/mlquiades/main.py --a sample_data --b output_dir
     └── report_isoforms.md
 ```
 
+## GPU support (optional)
+
+mlquiades runs on CPU by default. On Linux with an NVIDIA GPU, install the appropriate
+CUDA libraries to speed up neural network tuning.
+```
+uv sync --extra gpu
+```
 
 ## Authors
 
