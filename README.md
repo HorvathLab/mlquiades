@@ -1,5 +1,5 @@
 # MLquiades
-*2026/07/13*
+*2026/11/16*
 
 (pronounced *em-el-kee-ah-days*)
 
@@ -29,8 +29,8 @@ uv venv
 # activate the venv: your command may differ for a different shell
 source .venv/bin/activate
 uv python pin 3.10
-zenodo_get 21893525 -o sample_data #https://zenodo.org/records/21893525
-tar -xvf sample_data/palbociclib_gex_isos.gz -C sample_data
+zenodo_get 21910946 -o sample_data #https://zenodo.org/records/21910946
+tar -xvf sample_data/mlquiades_data.tar.gz -C sample_data
 uv run src/mlquiades/main.py --a sample_data --b output_dir
 ```
 
@@ -110,6 +110,13 @@ python src/mlquiades/main.py --a sample_data --b output_dir
     └── report_isoforms.md
 ```
 
+## GPU support (optional)
+
+mlquiades runs on CPU by default. On Linux with an NVIDIA GPU, install the appropriate
+CUDA libraries to speed up neural network tuning.
+```
+uv sync --extra gpu
+```
 
 ## Authors
 

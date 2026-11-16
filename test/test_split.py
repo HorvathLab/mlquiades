@@ -24,11 +24,13 @@ def test_split():
         axis=0))
     y_labels = y_labels.rename(columns={0:'label'})
     df_ = pd.concat([df_, y_labels], axis=1)
+    df_['her_neg_hr_pos'] = 0
     df_['tissue'] = 'breast'
+    df_.loc[20:28, 'her_neg_hr_pos'] = 1
     df_['tissue'][1:20] = 'liver'
     df_['tissue'][90:93] = 'liver'
     df_['tissue'][21:30]= 'lung'
-    df_['tissue'][93:96]= 'lung'
+    df_['tissue'][93:96]= 'lung' 
     df_['cell line'] = np.arange(1, df_.shape[0] + 1)
     df_['cell line'] = [str(x) for x in df_['cell line'].tolist()]
     df_['for_pearson_calculation'] = np.random.rand(df_.shape[0], 1)
