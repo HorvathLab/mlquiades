@@ -30,7 +30,7 @@ uv venv
 source .venv/bin/activate
 uv python pin 3.10
 zenodo_get 21910946 -o sample_data #https://zenodo.org/records/21910946
-tar -xvf sample_data/mlquiades_data.gz -C sample_data
+tar -xvf sample_data/mlquiades_data.tar.gz -C sample_data
 uv run src/mlquiades/main.py --a sample_data --b output_dir
 ```
 
