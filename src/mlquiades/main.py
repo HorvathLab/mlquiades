@@ -256,7 +256,7 @@ def main():
             tissues = tissue_order(metadata['tissue'])
             plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature, tissues=tissues)
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature, tissues=tissues)
-            stitch_pngs(output_dir, data_type[0])
+        stitch_pngs(output_dir, data_type[0])
 
     print('....... Generating evaluation reports ........')
     comparison_plt(output_dir)
