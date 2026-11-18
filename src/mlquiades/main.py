@@ -3,6 +3,7 @@ os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 import sys
 import argparse
 from utils import *
+from sklearn.preprocessing import OneHotEncoder
 
 print('....... Parsing arguments .......')
 
@@ -154,8 +155,24 @@ def main():
         
     print('....... Reading in data ......................')
     df = pd.read_csv(data_dir + 'gex_palbociclib.csv')
-    # df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
-    # df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue', 'her_neg_hr_pos'])
+    df2 = pd.read_csv(data_dir + 'isoforms_palbociclib.csv')
+    df3 = pd.read_csv(data_dir + 'snv_var_counts_small_celllines.csv', sep='\t', usecols=range(10))
+    df3 = df3.rename(columns={'sample':'cell line'})
+    df3.columns = [x.lower() for x in df3.columns]
+    df3.columns = [x if x=='cell line' else 'snv_' + str(x) for x in df3.columns]
+
+    srrs = pd.read_csv(data_dir + 'sraruntable.csv')
+    srrs = srrs.rename(columns={'Run':'sample'})[['sample', 'cell_line']]
+    srrs['cell_line'] = srrs['cell_line'].str.replace('-','')
+        
+    dict_srrs = dict(zip(srrs['sample'], srrs['cell_line']))
+    df3['cell line'] = [dict_srrs[x] for x in df3['cell line']]
+
+    df = df.merge(df2, how='inner', on=['cell line', 'ic50', 'auc', 'max_conc', 'label', 'tissue', 'her_neg_hr_pos'])
+    df = df.merge(df3, how='left', on=['cell line'])
+    encoder = OneHotEncoder(sparse_output=False).set_output(transform='pandas')
+    encoded_cols = encoder.fit_transform(df[['tissue']])
+    df = pd.concat([df, encoded_cols], axis=1)
     df['for_pearson_calculation'] = df['ic50']
     df = df.dropna(subset=['label']).drop(columns=['ic50', 'auc', 'max_conc'])
     
@@ -163,10 +180,15 @@ def main():
     X_train_split, y_train, X_val_split, y_val_, X_test_split, y_test, pearson_train, metadata = split_data(
         output_dir=output_dir, df=df)
     
-    feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
-    datatypes_searchsymbols = [(['gex'], ['ensg']), (['isoforms'], ['enst']), (['both'], ['ensg', 'enst'])]
-    
+    datatypes_searchsymbols = [(['snv'], ['snv', 'tissue_']), (['gex'], ['ensg']), (['iso'], ['enst']),
+                               (['gex_snv'], ['ensg', 'snv', 'tissue_']), (['gex_iso'], ['ensg', 'enst']), (['iso_snv'], ['enst', 'snv', 'tissue_']),
+                               (['gex_iso_snv'], ['ensg', 'enst', 'snv', 'tissue_'])]
+
     for data_type, search_symbol in datatypes_searchsymbols:
+        if 'snv' in data_type[0]:
+            feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer']
+        else:
+            feature_selections = ['cdk4_6_genes', 'cdk4_6_cancer', 'pearson']
         for feature_select in feature_selections:
             output_dir_feature = output_dir + '/' + feature_select + '_' + data_type[0]
             X_train_ = X_train_split.iloc[:, X_train_split.columns.str.contains('|'.join(search_symbol))]
@@ -206,7 +228,7 @@ def main():
                 metadata, output_dir=output_dir_feature, hyperband_iterations=hyperband_iterations, 
                 plt_confusion=confusion)
             svmach,svm_ypred  = svm_model(X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature,
-                             metadata=metadata, X_val=X_val_, y_val=y_val_)
+                            metadata=metadata, X_val=X_val_, y_val=y_val_)
             rf,rf_ypred = random_forest(
                 X_train_, y_train_, X_test, y_test, output_dir=output_dir_feature, metadata=metadata,
                 X_val=X_val_, y_val=y_val_, plt_confusion=confusion)
@@ -231,13 +253,15 @@ def main():
             evaluation_df.to_csv(output_dir_feature + '/evaluation_df.csv', index=False)
             metadata_test.to_csv(output_dir_feature + '/metadata_test.csv', index=False)
             
-            print('....... Generating evaluation reports ........')
             tissues = tissue_order(metadata['tissue'])
             plot_combined_rocauc(evaluation_df, feature_select, output_dir_feature, tissues=tissues)
             plot_combined_acc(evaluation_df, feature_select, output_dir_feature, tissues=tissues)
-            
-        stitch_pngs(output_dir, data_type[0])
-        
+            stitch_pngs(output_dir, data_type[0])
+
+    print('....... Generating evaluation reports ........')
+    comparison_plt(output_dir)
+    stitch_pngs_breast_only(output_dir)
+    
     if os.path.isfile(data_dir + 'orchid.txt'):
         f = open(data_dir + 'orchid.txt', 'r')
         file_contents = f.read()

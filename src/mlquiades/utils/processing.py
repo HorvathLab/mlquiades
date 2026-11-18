@@ -231,6 +231,7 @@ def split_data(
     grouped = pd.concat([all_tissues_df, grouped])
     
     plot_split(grouped, output_dir)
+    plot_split_tissue(grouped, output_dir, tissue='breast')
     
     return X_train_, y_train_, X_val_, y_val_, X_test, y_test, pearson_train, metadata
 

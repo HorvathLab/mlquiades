@@ -1,22 +1,24 @@
 import os
+import html
 import markdown
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from pathlib import Path
+import seaborn.objects as so
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from sklearn.metrics import ConfusionMatrixDisplay
 
-LEFT_IN = 0.9     # space for the y-axis label
-RIGHT_IN = 1.6    # space for the legend
-GROUP_IN = 1.5    # width of one tissue group
+LEFT_IN = 0.9
+RIGHT_IN = 1.6
+GROUP_IN = 1.5
 TOP_IN = 0.4
-BOTTOM_IN = 2.2   # space for model + tissue labels
+BOTTOM_IN = 2.2
 DPI = 100
 
 MODEL_NAMES = {'nn_hb': 'nn', 'ridge_classification': 'ridge',
                'svm': 'svm2', 'svm_l1': 'svm1'}
-
 
 def tissue_order(tissues):
     '''
@@ -105,8 +107,39 @@ def plot_split(df, output_dir, tissues=None):
     return
 
 
+def plot_split_tissue(df, output_dir, tissue='breast'):
+    '''
+    Plot the number of sensitive and resistant cell lines in the training,
+    validation and testing splits for a single tissue type, side by side.
+    '''
+    df = df[df['tissue'] == tissue]
+    variables = list(df['variable'].unique())
+    colors = sns.color_palette('icefire')
+    x = np.arange(len(variables))
+    ymax = df['value'].max()
+
+    fig, axes = plt.subplots(1, 3, figsize=(9, 3.5), sharey=True)
+
+    for ax, split in zip(axes, ['train', 'val', 'test']):
+        vals = (df[df['train_val_test'] == split].set_index('variable')['value']
+                .reindex(variables).to_numpy(dtype=float))
+        p = ax.bar(x, np.nan_to_num(vals), 0.6, color=colors[:len(variables)])
+        ax.bar_label(p, labels=['' if np.isnan(v) else str(int(v)) for v in vals],
+                     fontsize=8)
+        ax.set_title(split.upper())
+        ax.set_xticks(x, variables, rotation=30, ha='right')
+
+    axes[0].set_ylim(0, ymax * 1.15)
+    axes[0].set_ylabel('# of cell lines')
+    fig.suptitle(tissue)
+    fig.tight_layout()
+
+    fig.savefig(f'{output_dir}/data_split_{tissue}.png', dpi=DPI, bbox_inches='tight')
+    plt.close(fig)
+
+
 def plot_combined_rocauc(
-        evaluation_df, feature_selection, output_dir, tissues=None):
+        evaluation_df, feature_selection, output_dir, breast=False, tissues=None):
     '''
     Creates barplot of ROC AUC scores across all models. Tissues where ROC AUC
     is undefined (only one class in the testing dataset) are left blank. Saves
@@ -114,6 +147,8 @@ def plot_combined_rocauc(
     '''
     evaluation_df = evaluation_df.copy()
     evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_0', 'n_1']
+    if breast==True:
+        evaluation_df = evaluation_df[evaluation_df['tissue']=='breast']
     evaluation_df['model'] = evaluation_df['model'].replace(MODEL_NAMES)
     evaluation_df['rocauc'] = pd.to_numeric(evaluation_df['rocauc'], errors='coerce')
     if tissues is None:
@@ -134,23 +169,30 @@ def plot_combined_rocauc(
     ax.legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
     _tissue_ticklabels(ax, tissues)
 
-    fig.savefig(output_dir + '/plt_rocauc_all_' + feature_selection + '.png', dpi=DPI)
+    if breast:
+        fig.savefig(output_dir + '/plt_rocauc_breast_' + feature_selection + '.png', dpi=DPI)
+    else:
+        fig.savefig(output_dir + '/plt_rocauc_all_' + feature_selection + '.png', dpi=DPI)
     plt.close(fig)
 
     df__ = (evaluation_df.dropna(subset=['rocauc'])
             .drop(columns=['acc', 'n_0', 'n_1'])
             .melt(id_vars=['model', 'tissue']))
     df__ = df__[['model', 'variable', 'value', 'tissue']]
-    df__.to_csv(output_dir + '/evaluation_df_rocauc.csv', index=False)
-
+    if breast:
+        df__.to_csv(output_dir + '/evaluation_df_breast_rocauc.csv', index=False)
+    else:
+        df__.to_csv(output_dir + '/evaluation_df_rocauc.csv', index=False)
 
 def plot_combined_acc(
-        evaluation_df, feature_selection, output_dir, tissues=None):
+        evaluation_df, feature_selection, output_dir, breast=False, tissues=None):
     '''
     Creates barplot of acc scores across all models. Saves as png.
     '''
     evaluation_df = evaluation_df.copy()
     evaluation_df.columns = ['model', 'tissue', 'acc', 'rocauc', 'n_0', 'n_1']
+    if breast==True:
+        evaluation_df = evaluation_df[evaluation_df['tissue']=='breast']
     evaluation_df['model'] = evaluation_df['model'].replace(MODEL_NAMES)
     if tissues is None:
         tissues = tissue_order(evaluation_df['tissue'])
@@ -204,9 +246,13 @@ def plot_combined_acc(
     ax.set_ylabel('accuracy')
     ax.legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
 
-    fig.savefig(output_dir + '/plt_accuracy_all_' + feature_selection + '.png', dpi=DPI)
+    if breast==True:
+        fig.savefig(output_dir + '/plt_accuracy_breast_' + feature_selection + '.png', dpi=DPI)
+        df__.to_csv(output_dir + '/evaluation_df_breast_acc.csv', index=False)
+    else:
+        fig.savefig(output_dir + '/plt_accuracy_all_' + feature_selection + '.png', dpi=DPI)
+        df__.to_csv(output_dir + '/evaluation_df_acc.csv', index=False)
     plt.close(fig)
-    df__.to_csv(output_dir + '/evaluation_df_acc.csv', index=False)
 
 
 def plot_confusion_matrix(
@@ -264,4 +310,67 @@ def stitch_pngs(
     html = ('<html><head><style>img { max-width: none; display: block; }'
             '</style></head><body>' + html + '</body></html>')
     with open(output_dir + '/report_' + data_type + '.html', 'w') as f:
+        f.write(html)
+
+def comparison_plt(
+        output_dir):
+    '''
+    Make comparison plot for accuracy across all models.
+    '''
+    
+    df_all = pd.DataFrame(columns=['model','tissue','acc','rocauc','n_correctly_predicted_sensitive_cell_lines','n_correctly_predicted_resistant_cell_lines'])
+    dirs = os.listdir(output_dir)
+    dirs = [x for x in dirs if '.' not in x]
+
+    for dir in dirs:
+        df = pd.read_csv(output_dir + '/' + dir + '/evaluation_df.csv')
+        df = df[df['tissue']=='breast']
+        df['features'] = dir
+        df_all = pd.concat([df_all, df])
+
+    df_all['fts'] = [x.replace('cdk4_6_cancer', 'cdk46cancer').replace('cdk4_6_gene', 'cdk46gene') for x in df_all['features'].tolist()]
+    df_all['features0'] = [x.split('_')[0] for x in df_all['fts'].tolist()]
+    df_all['features'] = [x.split('_',1)[1] for x in df_all['fts'].tolist()]
+    dirs.sort()
+
+    for metric in ['acc', 'rocauc']:
+        fig = plt.figure(figsize=(8, 5))
+
+        (
+            so.Plot(df_all.reset_index(drop=True), 'features0', metric, color='features', marker='model')
+            .add(so.Dots(pointsize=10), so.Jitter(.9))
+            .label(title='Model ' + metric.upper() + ' Comparison', x='Feature Selection Method', y=metric.upper())
+            .on(fig)
+            .plot()
+        )
+
+        legend = fig.legends[0]
+        legend.set_loc("center left")
+        legend.set_bbox_to_anchor((1.0, 0.5), transform=fig.transFigure)
+
+        fig.savefig(output_dir + '/comparison_' + metric + '.png', bbox_inches="tight", dpi=300)
+        
+def stitch_pngs_breast_only(output_dir, img_width=700):
+    '''
+    Puts the breast-only pngs into md and html reports.
+    In the html, every image is shown at the same width (img_width px).
+    '''
+    report_str = ['# Report - Breast Only', '', '## Data Distribution', '']
+    report_str.append('![data split](data_split_breast.png)')
+
+    report_str.extend(['', '## Evaluation - Accuracy', ''])
+    report_str.append('![acc all](comparison_acc.png)')
+
+    report_str.extend(['', '## Evaluation - ROCAUC', ''])
+    report_str.append('![rocauc all](comparison_rocauc.png)')
+
+    md = '\n'.join(report_str) + '\n'
+    with open(output_dir + '/report_breast.md', 'w') as f:
+        f.write(md)
+
+    html = markdown.markdown(md)
+    html = ('<html><head><style>'
+            f'img {{ width: {img_width}px; height: auto; display: block; }}'
+            '</style></head><body>' + html + '</body></html>')
+    with open(output_dir + '/report_breast.html', 'w') as f:
         f.write(html)

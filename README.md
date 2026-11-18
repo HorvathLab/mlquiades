@@ -115,6 +115,7 @@ python src/mlquiades/main.py --a sample_data --b output_dir
 mlquiades runs on CPU by default. On Linux with an NVIDIA GPU, install the appropriate
 CUDA libraries to speed up neural network tuning.
 ```
+uv add --optional gpu "tensorflow[and-cuda]==2.18.1; sys_platform == 'linux'" # this is an example
 uv sync --extra gpu
 ```
 
